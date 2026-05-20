@@ -18,13 +18,13 @@ async function createApp() {
 
   const fastify = app.getHttpAdapter().getInstance();
 
-  // 🔥 Hook pour répondre aux OPTIONS sans passer par le parseur multipart
-  fastify.addHook('preParsing', async (request, reply) => {
+  // 🔥 Intercepter OPTIONS avant tout (y compris avant CORS et multipart)
+  fastify.addHook('onRequest', (request, reply, done) => {
     if (request.method === 'OPTIONS') {
-      reply.status(204).send(); // No Content
-      // ⚠️ Important : ne pas retourner reply – retourner undefined ou laisser vide
+      reply.status(204).send();
       return;
     }
+    done();
   });
 
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
@@ -36,9 +36,6 @@ async function createApp() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   });
-
-  // ✅ Suppression du middleware Express inutile (ligne à supprimer)
-  // app.use((req, res, next) => { ... }); // À ENLEVER !
 
   app.setGlobalPrefix('api');
 
@@ -54,7 +51,6 @@ async function createApp() {
   return app;
 }
 
-// Export pour Vercel (serverless)
 export default async function handler(req: any, res: any) {
   if (!cachedApp) {
     cachedApp = await createApp();
@@ -63,7 +59,6 @@ export default async function handler(req: any, res: any) {
   instance.server.emit('request', req, res);
 }
 
-// Lancement local
 if (!process.env.VERCEL) {
   createApp().then(async (app) => {
     const port = process.env.PORT || 3031;
