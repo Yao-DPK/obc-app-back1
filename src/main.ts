@@ -35,6 +35,19 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   });
 
+  app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', process.env.PUBLIC_APP_FRONT_BASE_URL || 'https://obc-app-front1.vercel.app');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.status(200).send();
+      return;
+    }
+    next();
+  });
+
+
   app.setGlobalPrefix('api')
 
 
