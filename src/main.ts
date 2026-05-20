@@ -29,7 +29,7 @@ async function bootstrap() {
 
   // ✅ Register @fastify/cors explicitly
   await app.register(fastifyCors, {
-    origin: process.env.PUBLIC_APP_FRONT_BASE_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
