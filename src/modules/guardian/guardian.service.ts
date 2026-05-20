@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db, guardianRelationships, users, eq, and } from 'src/database/db';
+import { db, guardianRelationships, users, eq, and } from '../../database/db';
 import { TRPCError } from '@trpc/server';
 
 @Injectable()

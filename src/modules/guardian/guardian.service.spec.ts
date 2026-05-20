@@ -1,7 +1,7 @@
 // guardian.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { GuardianService } from './guardian.service';
-import { db } from 'src/database/db';
+import { db } from '../../database/db';
 import { TRPCError } from '@trpc/server';
 
 jest.mock('../../database/config/db.config', () => ({

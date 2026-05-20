@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { TRPCError } from '@trpc/server';
-import { users } from 'src/database/schema';
-import { db, eq } from 'src/database/db';
+import { users } from '../../database/schema';
+import { db, eq } from '../../database/db';
 
 @Injectable()
 export class UserService {

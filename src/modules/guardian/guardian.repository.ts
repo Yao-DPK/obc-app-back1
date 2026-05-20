@@ -1,7 +1,7 @@
 // apps/api/src/modules/guardian/guardian-relationships.repository.ts
 import { Injectable } from '@nestjs/common';
 import { and } from 'drizzle-orm';
-import { db, guardianRelationships } from 'src/database/db';
+import { db, guardianRelationships } from '../../database/db';
 
 @Injectable()
 export class GuardianRelationshipsRepository {

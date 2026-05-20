@@ -1,6 +1,5 @@
 // apps/api/src/modules/documents/documents.service.ts
 import { Injectable } from '@nestjs/common';
-import { db, documents } from '@/database/db';
 import type  { CreateDocumentSchema } from './document.dto';
 import { DocumentRepository } from './document.repository';
 import { z } from 'zod';
