@@ -3,7 +3,6 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import multipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
