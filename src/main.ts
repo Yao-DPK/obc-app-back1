@@ -5,29 +5,20 @@ import {
 } from '@nestjs/platform-fastify';
 import multipart from '@fastify/multipart';
 import { AppModule } from './app.module';
-import fastifyCookie from "@fastify/cookie"
+import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 
+let cachedApp: NestFastifyApplication | null = null;
 
-
-async function bootstrap() {
+async function createApp() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: true }),
   );
 
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
-  const port = process.env.PORT || 3031;
   const allowedOrigins = frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
 
-  /* app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  } ); */
-
-  // ✅ Register @fastify/cors explicitly
   await app.register(fastifyCors, {
     origin: allowedOrigins,
     credentials: true,
@@ -35,9 +26,10 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   });
 
+  // Middleware OPTIONS (sécurité supplémentaire)
   app.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Origin', process.env.PUBLIC_APP_FRONT_BASE_URL || 'https://obc-app-front1.vercel.app');
+      res.setHeader('Access-Control-Allow-Origin', frontendUrl || 'https://obc-app-front1.vercel.app');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -47,22 +39,34 @@ async function bootstrap() {
     next();
   });
 
-
-  app.setGlobalPrefix('api')
-
+  app.setGlobalPrefix('api');
 
   await app.register(fastifyCookie, {
-    secret: process.env.COOKIE_SECRET
-  })
+    secret: process.env.COOKIE_SECRET,
+  });
 
   await app.register(multipart, {
-    limits: {
-      fileSize: 10 * 1024 * 1024, // 10 MB
-    },
+    limits: { fileSize: 10 * 1024 * 1024 },
   });
-  
 
-  await app.listen(port, '0.0.0.0');
+  await app.init();
+  return app;
 }
 
-bootstrap();
+// Export pour Vercel (serverless)
+export default async function handler(req: any, res: any) {
+  if (!cachedApp) {
+    cachedApp = await createApp();
+  }
+  const instance = cachedApp.getHttpAdapter().getInstance();
+  instance.server.emit('request', req, res);
+}
+
+// Lancement local
+if (!process.env.VERCEL) {
+  createApp().then(async (app) => {
+    const port = process.env.PORT || 3031;
+    await app.listen(port, '0.0.0.0');
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
