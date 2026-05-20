@@ -19,9 +19,9 @@ import { CorsMiddleware } from './modules/common/middleware/cors.middleware';
 
 @Module({
   imports: [
-    TRPCModule.forRoot({
+    /* TRPCModule.forRoot({
       autoSchemaFile: './trpc',
-    }), AuthModule, GoogleDriveModule, ConfigModule.forRoot({ isGlobal: true }), GoogleAuthModule, DocumentModule, UserModule, GuardianModule, PaymentModule, InscriptionModule],
+    }), */ AuthModule, GoogleDriveModule, ConfigModule.forRoot({ isGlobal: true }), GoogleAuthModule, DocumentModule, UserModule, GuardianModule, PaymentModule, InscriptionModule],
   controllers: [AppController],
   providers: [AppService],
 })
