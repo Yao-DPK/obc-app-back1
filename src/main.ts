@@ -7,6 +7,7 @@ import multipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 
 let cachedApp: NestFastifyApplication | null = null;
 
@@ -48,6 +49,8 @@ async function createApp() {
   await app.register(multipart, {
     limits: { fileSize: 10 * 1024 * 1024 },
   });
+
+
 
   await app.init();
   return app;

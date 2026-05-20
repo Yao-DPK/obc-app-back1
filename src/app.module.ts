@@ -15,7 +15,7 @@ import { AuditMiddleware } from './modules/common/middleware/audit.middleware';
 import { GuardianController } from './modules/guardian/guardian.controller';
 import { CorsMiddleware } from './modules/common/middleware/cors.middleware';
 
-
+const isProduction = process.env.NODE_ENV === 'prod'
 
 @Module({
   imports: [
