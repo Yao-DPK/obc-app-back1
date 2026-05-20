@@ -6,7 +6,6 @@ import * as bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { FullRegistrationSchema } from './dto/player-registration.dto';
 import { GuardianRelationshipsRepository } from '../guardian/guardian.repository';
-import { MultipartFile } from '@fastify/multipart';
 
 @Injectable()
 export class InscriptionService {
@@ -18,7 +17,7 @@ export class InscriptionService {
 
   async preRegister(
     data: z.infer<typeof FullRegistrationSchema>,
-    signatureFile: MultipartFile,
+    signature: { buffer: Buffer; filename: string; mimetype: string },
   ) {
     const { step1, step2 } = data;
 
@@ -32,9 +31,9 @@ export class InscriptionService {
     const hashedPassword = await bcrypt.hash(step1.password, 10);
 
     // 3. Upload de la signature
-    const fileBuffer = await signatureFile.toBuffer();
-    const originalName = signatureFile.filename;
-    const mimeType = signatureFile.mimetype;
+    const fileBuffer = await signature.buffer;
+    const originalName = signature.filename;
+    const mimeType = signature.mimetype;
     const signatureUpload = await this.googleDriveService.uploadFile(fileBuffer, originalName, mimeType);
     const signatureUrl = signatureUpload.publicUrl; // ajustez selon votre service
 
