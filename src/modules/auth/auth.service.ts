@@ -1,13 +1,13 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { db } from 'src/database/db';
-import { users, eq } from 'src/database/db';
+import { db } from '@/database/db';
+import { users, eq } from '@/database/db';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserRepository } from '../user/user.repository';
 import { jwtConstants } from './constants';
-import { refreshTokens } from 'src/database/schema/refresh_token';
+import { refreshTokens } from '@/database/schema/refresh_token';
 import { randomBytes } from 'crypto';
 import { FastifyReply } from 'fastify';
 
@@ -51,8 +51,8 @@ export class AuthService {
 
 
   async register(dto: RegisterDto) {
-    const existingUser = await db.select().from(users).where(eq(users.email, dto.email));
-    if (existingUser.length) {
+    const existingUser = await this.userRepository.findByEmail(dto.email);
+    if (existingUser) {
       throw new ConflictException('Email already exists');
     }
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -66,7 +66,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, res: FastifyReply) {
-    const [user] = await db.select().from(users).where(eq(users.email, dto.email));
+    const user = await this.userRepository.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
@@ -81,7 +81,7 @@ export class AuthService {
     if (!stored || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
-    const [user] = await db.select().from(users).where(eq(users.id, stored.userId));
+    const user = await this.userRepository.findById(stored.userId);
     if (!user) throw new UnauthorizedException('User not found');
 
     const newAccessToken = this.generateAccessToken(user.id, user.role, user.email, user.phone!);
