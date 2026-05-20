@@ -1,7 +1,7 @@
 // apps/api/src/modules/payment/payment.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentService } from './payment.service';
-import { db } from 'src/database/db';
+import { db } from '@/database/db';
 import { TRPCError } from '@trpc/server';
 
 jest.mock('../../database/config/db.config', () => ({

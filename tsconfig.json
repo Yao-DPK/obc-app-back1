@@ -23,7 +23,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@database/*": ["./src/database/*"]
+      "@/*": ["./src/*"]
     }
   }
 }

@@ -1,5 +1,5 @@
 // apps/api/src/modules/documents/document.router.spec.ts
-jest.mock('src/database/db', () => ({
+jest.mock('@/database/db', () => ({
   db: {
     select: jest.fn(),
     insert: jest.fn(),
@@ -12,8 +12,8 @@ jest.mock('src/database/db', () => ({
 import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentRouter } from './document.router';
 import { DocumentService } from './document.service';
-import { documents } from 'src/database/schema';
-import { db, eq } from 'src/database/db';
+import { documents } from '@/database/schema';
+import { db, eq } from '@/database/db';
 
 const mockDocumentService = {
   create: jest.fn(),
