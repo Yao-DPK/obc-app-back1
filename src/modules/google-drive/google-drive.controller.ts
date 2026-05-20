@@ -2,6 +2,7 @@ import { Controller, Post, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { GoogleDriveService } from '../google-drive/google-drive.service';
 import { Public } from '../common/decorators/public.decorator';
+import { parseMultipart } from '../common/utils/multipart-parser';
 
 
 @Controller('upload')
