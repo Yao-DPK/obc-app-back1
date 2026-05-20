@@ -7,7 +7,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserRepository } from '../user/user.repository';
 import { jwtConstants } from './constants';
-import { refreshTokens } from '@/database/schema/refresh_token';
+import { refreshTokens } from '../../database/schema/refresh_token';
 import { randomBytes } from 'crypto';
 import { FastifyReply } from 'fastify';
 
