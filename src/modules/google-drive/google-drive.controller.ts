@@ -11,19 +11,16 @@ export class GoogleDriveController {
   //@Public()
   @Post('file') 
   async uploadFile(@Req() req: FastifyRequest) {
-    const file = await req.file();               // récupère le fichier multipart
-    if (!file) {
-      throw new Error('Aucun fichier fourni');
-    }
-
-    const fileBuffer = await file.toBuffer();    // convertit en Buffer
-    const originalName = file.filename;
-    const mimeType = file.mimetype;
-
+     // Only parse when content-type is multipart
+    const { files, fields } = await parseMultipart(req);
+    const file = files[0];
+    if (!file) throw new Error('No file uploaded');
+    // Now you have file.buffer, file.filename, file.mimetype
+    // ... your existing Google Drive upload logic
     const result = await this.googleDriveService.uploadFile(
-      fileBuffer,
-      originalName,
-      mimeType,
+      file.buffer,
+      file.filename,
+      file.mimetype,
     );
 
     return { success: true, file: result };

@@ -16,17 +16,6 @@ async function createApp() {
     new FastifyAdapter({ logger: true }),
   );
 
-  const fastify = app.getHttpAdapter().getInstance();
-
-  // 🔥 Intercepter OPTIONS avant tout (y compris avant CORS et multipart)
-  fastify.addHook('onRequest', (request, reply, done) => {
-    if (request.method === 'OPTIONS') {
-      reply.status(204).send();
-      return;
-    }
-    done();
-  });
-
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
   const allowedOrigins = frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
 
@@ -41,10 +30,6 @@ async function createApp() {
 
   await app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET,
-  });
-
-  await app.register(multipart, {
-    limits: { fileSize: 10 * 1024 * 1024 },
   });
 
   await app.init();
