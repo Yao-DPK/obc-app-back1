@@ -17,8 +17,18 @@ async function createApp() {
     new FastifyAdapter({ logger: true }),
   );
 
+  const fastify = app.getHttpAdapter().getInstance();
+
+
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
   const allowedOrigins = frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
+
+  fastify.addHook('preParsing', async (request, reply) => {
+  if (request.method === 'OPTIONS') {
+    reply.status(204).send(); // No Content
+    return reply; // Stops further processing (including multipart)
+  }
+});
 
   await app.register(fastifyCors, {
     origin: allowedOrigins,
@@ -42,20 +52,14 @@ async function createApp() {
 
   app.setGlobalPrefix('api');
 
-  app.getHttpAdapter().getInstance().addHook('preParsing', async (request, reply) => {
-  if (request.method === 'OPTIONS') {
-    reply.status(204).send(); // No Content
-    return reply; // court-circuite le reste des hooks
-  }
-});
 
   await app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET,
   });
 
   await app.register(multipart, {
-    limits: { fileSize: 10 * 1024 * 1024 },
-  });
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 
 
