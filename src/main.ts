@@ -15,7 +15,7 @@ async function createApp() {
   );
 
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
-  const allowedOrigins = frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
+  const allowedOrigins = frontendUrl ? [frontendUrl, 'https://obc-app-front1.vercel.app'] : ['http://localhost:5173', 'https://obc-app-front1.vercel.app'];
 
   app.use(cors({
     origin: allowedOrigins,
