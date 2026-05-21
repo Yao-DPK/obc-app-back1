@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import * as cookieParser from 'cookie-parser';
-import * as cors from 'cors';
-import * as express from 'express';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express from 'express';
 
 let cachedServer: any;
 
