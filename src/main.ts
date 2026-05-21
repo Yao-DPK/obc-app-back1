@@ -26,7 +26,7 @@ async function createApp() {
 
   app.use(cookieParser(process.env.COOKIE_SECRET));
 
-  app.setGlobalPrefix('api');
+  //app.setGlobalPrefix('api');
 
   await app.init();
   return expressApp;
