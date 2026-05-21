@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Res, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
-import type { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 import { Public } from '../common/decorators/public.decorator';
 
 @Controller('google')
@@ -18,7 +18,7 @@ export class GoogleAuthController {
 
   //@Public()
   @Get('redirect')
-  async oauth2callback(@Query('code') code: string, @Res() res: FastifyReply) {
+  async oauth2callback(@Query('code') code: string, @Res() res: Response) {
     console.log(`📥 Callback route atteinte avec le code : ${code}`);
 
     if (!code) {
@@ -37,12 +37,13 @@ export class GoogleAuthController {
 
       console.log(`🕒 Access Token (début): ${tokens.access_token?.substring(0, 10)}...`);
 
-      // Réponse simple en texte
-      return res.status(HttpStatus.OK).type('text/html').send(`
+      // Définir le type de contenu HTML
+      res.type('text/html');
+      return res.status(HttpStatus.OK).send(`
         <h1>Authentification réussie !</h1>
         <p>Vous pouvez fermer cette page.</p>
       `);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erreur échange code:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(`Erreur: ${error.message}`);
     }
