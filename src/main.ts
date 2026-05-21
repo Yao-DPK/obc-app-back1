@@ -1,52 +1,49 @@
 import { NestFactory } from '@nestjs/core';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import fastifyCookie from '@fastify/cookie';
-import fastifyCors from '@fastify/cors';
+import * as cookieParser from 'cookie-parser';
+import * as cors from 'cors';
+import * as express from 'express';
 
-let cachedApp: NestFastifyApplication | null = null;
+let cachedServer: any;
 
 async function createApp() {
-  const app = await NestFactory.create<NestFastifyApplication>(
+  const expressApp = express();
+  const app = await NestFactory.create(
     AppModule,
-    new FastifyAdapter({ logger: true }),
+    new ExpressAdapter(expressApp),
   );
 
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
   const allowedOrigins = frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
 
-  await app.register(fastifyCors, {
+  app.use(cors({
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
-  });
+  }));
+
+  app.use(cookieParser(process.env.COOKIE_SECRET));
 
   app.setGlobalPrefix('api');
 
-  await app.register(fastifyCookie, {
-    secret: process.env.COOKIE_SECRET,
-  });
-
   await app.init();
-  return app;
+  return expressApp;
 }
 
 export default async function handler(req: any, res: any) {
-  if (!cachedApp) {
-    cachedApp = await createApp();
+  if (!cachedServer) {
+    cachedServer = await createApp();
   }
-  const instance = cachedApp.getHttpAdapter().getInstance();
-  instance.server.emit('request', req, res);
+  cachedServer(req, res);
 }
 
 if (!process.env.VERCEL) {
-  createApp().then(async (app) => {
+  createApp().then((app) => {
     const port = process.env.PORT || 3031;
-    await app.listen(port, '0.0.0.0');
-    console.log(`Server running on http://localhost:${port}`);
+    app.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}`);
+    });
   });
 }

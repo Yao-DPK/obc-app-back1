@@ -9,13 +9,14 @@ import { UserRepository } from '../user/user.repository';
 import { jwtConstants } from './constants';
 import { refreshTokens } from '../../database/schema/refresh_token';
 import { randomBytes } from 'crypto';
-import { FastifyReply } from 'fastify';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userRepository: UserRepository,
-    private jwtService: JwtService) {}
+    private jwtService: JwtService
+  ) {}
 
   private generateAccessToken(userId: number, role: string, email: string, phone?: string) {
     const payload = { sub: userId, role, email, phone };
@@ -25,7 +26,7 @@ export class AuthService {
     });
   }
 
-  private async generateRefreshToken(userId: number, res: FastifyReply) {
+  private async generateRefreshToken(userId: number, res: Response) {
     const token = randomBytes(40).toString('hex');
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -39,16 +40,15 @@ export class AuthService {
       expiresAt,
     });
 
-    // Fastify : setCookie (nom, valeur, options)
-    res.setCookie('refresh_token', token, {
+    // Express : res.cookie(nom, valeur, options)
+    res.cookie('refresh_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod',
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: '/api/auth/refresh', // chemin où le cookie sera envoyé
+      path: '/api/auth/refresh',
     });
   }
-
 
   async register(dto: RegisterDto) {
     const existingUser = await this.userRepository.findByEmail(dto.email);
@@ -65,7 +65,7 @@ export class AuthService {
     return { user: { id: newUser[0].id, email: newUser[0].email, role: newUser[0].role }, token };
   }
 
-  async login(dto: LoginDto, res: FastifyReply) {
+  async login(dto: LoginDto, res: Response) {
     const user = await this.userRepository.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
@@ -76,7 +76,7 @@ export class AuthService {
     return { user: { id: user.id, email: user.email, role: user.role }, accessToken };
   }
 
-  async refreshAccessToken(refreshToken: string, res: FastifyReply) {
+  async refreshAccessToken(refreshToken: string, res: Response) {
     const [stored] = await db.select().from(refreshTokens).where(eq(refreshTokens.token, refreshToken));
     if (!stored || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -88,10 +88,9 @@ export class AuthService {
     return { accessToken: newAccessToken };
   }
 
-  async logout(userId: number, res: FastifyReply) {
+  async logout(userId: number, res: Response) {
     await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
-    res.clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
     return { success: true };
   }
-
 }

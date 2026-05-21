@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Response, Request as ExpressRequest } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -21,30 +21,28 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: FastifyReply) {
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     return this.authService.login(dto, res);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refresh(@Req() req:FastifyRequest, @Res({ passthrough: true }) res: FastifyReply){
+  async refresh(@Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies['refresh_token'];
-    if(!refreshToken) throw new UnauthorizedException('Refresh Token manquant');
+    if (!refreshToken) throw new UnauthorizedException('Refresh Token manquant');
     return this.authService.refreshAccessToken(refreshToken, res);
   }
 
-
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@Req() req: FastifyRequest, @Res({ passthrough: true }) res: FastifyReply) {
-    const userId = req.user.id;
+  async logout(@Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+    const userId = (req.user as any).id;
     return this.authService.logout(userId, res);
   }
 
-
   @Get('me')
-  getProfile(@Request() req){
+  getProfile(@Request() req: ExpressRequest) {
     return req.user;
   }
 }
