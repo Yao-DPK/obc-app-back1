@@ -6,8 +6,9 @@ import { AuthGuard } from './auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import type { Response, Request as ExpressRequest } from 'express';
+import { ApiController } from '../common/decorators/custom-prefix.decorator';
 
-@Controller('auth')
+@ApiController('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
