@@ -1,0 +1,23 @@
+kubernetes apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obc-app-k8s
+spec:
+  selector:
+    matchLabels:
+      app: obc-app-k8s
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: obc-app-k8s
+    spec:
+      containers:
+      - name: obc-app-k8s
+        image: pyke/obc-app-k8s
+        resources:
+          limits:
+            memory: "1024Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 3031

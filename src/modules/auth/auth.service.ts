@@ -85,7 +85,7 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found');
 
     const newAccessToken = this.generateAccessToken(user.id, user.role, user.email, user.phone!);
-    return { accessToken: newAccessToken };
+    return { user: { id: user.id, email: user.email, role: user.role }, accessToken: newAccessToken };
   }
 
   async logout(userId: number, res: Response) {
