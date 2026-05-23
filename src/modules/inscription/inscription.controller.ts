@@ -3,11 +3,15 @@ import type { Request } from 'express';
 import { InscriptionService } from './inscription.service';
 import { FullRegistrationSchema } from './dto/player-registration.dto';
 import { parseMultipart } from '../common/utils/multipart-parser';
+import { Public } from '../common/decorators/public.decorator';
+
 
 @Controller('inscription')
 export class InscriptionController {
   constructor(private readonly inscriptionService: InscriptionService) {}
 
+
+  @Public()
   @Post('pre-register')
   async preRegister(@Req() req: Request) {
     console.log("🔵 Accessing pre-register");

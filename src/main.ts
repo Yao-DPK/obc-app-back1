@@ -17,12 +17,13 @@ async function createApp() {
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
   const allowedOrigins = frontendUrl ? [frontendUrl, 'https://obc-app-front1.vercel.app', 'https://obc-app-front1-aqbm9bvoz-yao-dpks-projects.vercel.app'] : ['http://localhost:5173', 'https://obc-app-front1-aqbm9bvoz-yao-dpks-projects.vercel.app'];
 
-  /* app.use(cors({
+  app.use(cors({
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
-  })); */
+  }));
+
 
   app.use(cookieParser(process.env.COOKIE_SECRET));
 
