@@ -12,7 +12,7 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<UserSelect | null> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
-    console.log("Found User: ", user);
+    //console.log("Found User: ", user);
     return user || null;
   }
 
