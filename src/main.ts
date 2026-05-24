@@ -15,10 +15,25 @@ async function createApp() {
   );
 
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
-  const allowedOrigins = frontendUrl ? [frontendUrl, 'https://obc-app-front1.vercel.app', 'https://obc-app-front1-aqbm9bvoz-yao-dpks-projects.vercel.app'] : ['http://localhost:5173', 'https://obc-app-front1-aqbm9bvoz-yao-dpks-projects.vercel.app'];
+  const allowedOrigins: any = [];
+  if (frontendUrl) frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
+
+  if (process.env.NODE_ENV === 'production'){
+    allowedOrigins.push(process.env.FRONTEND_PRODUCTION_URL!);
+  }
+
+  if (process.env.VERCEL_ENV === 'preview'){
+    allowedOrigins.push(/^https:\/\/obc-app-front1-.*-yao-dpks-projects\.vercel\.app$/)
+  }
 
   app.use(cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.some(validOrigin => validOrigin === origin || origin.match(validOrigin))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
