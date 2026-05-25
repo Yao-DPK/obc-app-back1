@@ -14,6 +14,7 @@ async function createApp() {
     new ExpressAdapter(expressApp),
   );
 
+  console.log('VERCEL_ENV: ', process.env.VERCEL_ENV);
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
   const allowedOrigins: any = [];
   if (frontendUrl) frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
@@ -23,7 +24,7 @@ async function createApp() {
   }
 
   if (process.env.VERCEL_ENV === 'preview'){
-    allowedOrigins.push(/^https:\/\/obc-app-front1-.*-yao-dpks-projects\.vercel\.app$/)
+    allowedOrigins.push('/^https:\/\/obc-app-front1-.*-yao-dpks-projects\.vercel\.app$/')
   }
 
   app.use(cors({
