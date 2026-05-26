@@ -9,6 +9,7 @@ import { AuthGuard } from './auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.stategy';
+import { OtpModule } from '../otp/otp.module';
 
 
 @Module({
@@ -19,7 +20,8 @@ import { JwtStrategy } from './jwt.stategy';
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '15m' },
     }),
-    PassportModule
+    PassportModule,
+    OtpModule
   ],
   providers: [AuthService, 
     JwtStrategy,

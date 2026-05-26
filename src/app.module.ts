@@ -13,6 +13,8 @@ import { GuardianModule } from './modules/guardian/guardian.module';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuditMiddleware } from './modules/common/middleware/audit.middleware';
 import { GuardianController } from './modules/guardian/guardian.controller';
+import { EmailModule } from './modules/email/email.module';
+import { OtpModule } from './modules/otp/otp.module';
 
 const isProduction = process.env.NODE_ENV === 'prod'
 
@@ -20,7 +22,7 @@ const isProduction = process.env.NODE_ENV === 'prod'
   imports: [
     /* TRPCModule.forRoot({
       autoSchemaFile: './trpc',
-    }), */ AuthModule, GoogleDriveModule, ConfigModule.forRoot({ isGlobal: true }), GoogleAuthModule, DocumentModule, UserModule, GuardianModule, PaymentModule, InscriptionModule],
+    }), */ AuthModule, GoogleDriveModule, ConfigModule.forRoot({ isGlobal: true }), GoogleAuthModule, DocumentModule, UserModule, GuardianModule, PaymentModule, InscriptionModule, EmailModule, OtpModule],
   controllers: [AppController],
   providers: [AppService],
 })

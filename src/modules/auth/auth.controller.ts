@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, Request, Res, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, Request, Res, Req, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,12 +7,30 @@ import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import type { Response, Request as ExpressRequest } from 'express';
 import { ApiController } from '../common/decorators/custom-prefix.decorator';
+import { OtpService } from '../otp/otp.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private otpService: OtpService) {}
+
+   @Public()
+  @Post('send-verification-email')
+  async sendVerificationEmail(@Body('email') email: string) {
+    if (!email) throw new BadRequestException('Email requis');
+    await this.otpService.sendEmailOtp(email);
+    return { message: 'Code de vérification envoyé par email' };
+  }
 
   @Public()
+  @Post('verify-email')
+  async verifyEmail(@Body('email') email: string, @Body('code') code: string) {
+    if (!email || !code) throw new BadRequestException('Email et code requis');
+    this.otpService.verifyEmailOtp(email, code);
+    // Ici, vous pouvez marquer l'email comme vérifié en base de données
+    return { message: 'Email vérifié avec succès' };
+  }
+
+  @Public() 
   @Post('register')
   register(@Body() dto: RegisterDto) {
     console.log("Received register request");
