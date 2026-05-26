@@ -20,4 +20,4 @@ export class DocumentController {
     const parsed = parseInt(userId, 10);
     return this.documentsService.findByUser(parsed);
   }
-}
+} 

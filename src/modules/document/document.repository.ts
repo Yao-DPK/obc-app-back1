@@ -10,7 +10,7 @@ export type CreateDocumentInput = {
   publicUrl: string;
   isObligatory?: boolean;
 };
-
+ 
 export type UpdateDocumentValidationInput = {
   validatedAt?: Date | null;
 };

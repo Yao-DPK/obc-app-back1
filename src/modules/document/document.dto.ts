@@ -6,7 +6,7 @@ export const DocumentSchema = z.object({
   type: z.string(),
   fileId: z.string(),
   publicUrl: z.string().url(),
-  isObligatory: z.boolean().optional(),
+  isObligatory: z.boolean().optional().default(false),
   createdAt: z.string(),  
 });
 

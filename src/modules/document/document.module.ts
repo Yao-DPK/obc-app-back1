@@ -7,5 +7,6 @@ import { DocumentRepository } from './document.repository';
 @Module({
   controllers: [DocumentController],
   providers: [DocumentService, DocumentRouter, DocumentRepository],
+  exports: [DocumentService]
 })
 export class DocumentModule {}

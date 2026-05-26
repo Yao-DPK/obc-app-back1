@@ -17,7 +17,7 @@ async function createApp() {
   console.log('VERCEL_ENV: ', process.env.VERCEL_ENV);
   const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
   const allowedOrigins: any = [];
-  if (frontendUrl) frontendUrl ? [frontendUrl] : ['http://localhost:5173'];
+  if (frontendUrl) frontendUrl ? allowedOrigins.push(frontendUrl) : allowedOrigins.push('http://localhost:5173');
 
   if (process.env.NODE_ENV === 'production'){
     allowedOrigins.push(process.env.FRONTEND_PRODUCTION_URL!);

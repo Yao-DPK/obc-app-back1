@@ -15,4 +15,4 @@ export class DocumentService {
   async findByUser(userId: number){
     return this.documentRepository.findByUser(userId);
   }
-}
+} 

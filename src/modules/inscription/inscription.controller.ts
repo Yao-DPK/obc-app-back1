@@ -33,6 +33,16 @@ export class InscriptionController {
       throw new Error('Missing signature file');
     }
 
+    let otherFiles: { buffer: Buffer; filetype: string; filename: string; mimetype: string; isObligatory?: boolean }[] = []
+
+    for (let idx = 0; idx < files.length; idx ++){
+      const f = files[idx];
+      if (f.filename !== 'signature'){
+        otherFiles.push({ buffer:f.buffer, filetype: f.fieldname, filename:f.filename, mimetype: f.mimetype })
+      }
+    }
+
+
     let data;
     try {
       data = JSON.parse(dataStr);
@@ -49,6 +59,8 @@ export class InscriptionController {
       buffer: signatureFile.buffer,
       filename: signatureFile.filename,
       mimetype: signatureFile.mimetype,
-    });
+    }, 
+    otherFiles
+    );
   }
 }

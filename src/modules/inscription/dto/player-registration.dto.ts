@@ -16,6 +16,12 @@ export const AttestationSchema = z.object({
   acceptedTerms: z.boolean(),
 });
 
+export const InscriptionDocument = z.object({
+  documentName: z.string(),
+  document: z.file(),
+  isMandatory: z.boolean(),
+})
+
 
 // Schéma principal de pré-inscription
 export const PreRegistrationSchema = z.object({
@@ -41,6 +47,8 @@ export const PreRegistrationSchema = z.object({
   // Liste des garants (si non autonome)
   guardians: z.array(GuardianSchema).default([]).optional(),
 });
+
+
 
 export const FullRegistrationSchema = z.object({
   step1: PreRegistrationSchema,
