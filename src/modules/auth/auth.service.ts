@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { db } from '../../database/db';
 import { users, eq } from '../../database/db';
@@ -10,12 +10,16 @@ import { jwtConstants } from './constants';
 import { refreshTokens } from '../../database/schema/refresh_token';
 import { randomBytes } from 'crypto';
 import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userRepository: UserRepository,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private configService: ConfigService,
+    private emailService: EmailService
   ) {}
 
   private generateAccessToken(userId: number, role: string, email: string, phone?: string) {
@@ -92,5 +96,65 @@ export class AuthService {
     await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
     res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
     return { success: true };
+  }
+
+  generateResetToken(email: string): string {
+    const payload = { sub: email, purpose: 'reset' };
+    return this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_RESET_SECRET'),
+      expiresIn: '1h', // 1 heure
+    });
+  }
+
+  verifyResetToken(token: string): { email: string } | null {
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get('JWT_RESET_SECRET'),
+      });
+      if (payload.purpose !== 'reset') return null;
+      return { email: payload.sub };
+    } catch {
+      return null;
+    }
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.userRepository.findByEmail(email);
+    // Sécurité : on ne révèle pas l'existence de l'email
+    if (!user) return;
+
+    // Générer un token JWT valable 1 heure
+    const payload = { sub: user.id, email: user.email, purpose: 'reset' };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_RESET_SECRET'),
+      expiresIn: '1h',
+    });
+
+    const frontendUrl = process.env.NODE_ENV == 'dev' ? this.configService.get('FRONTEND_DEVELOPMENT_URL') : this.configService.get('FRONTEND_PRODUCTION_URL');
+    await this.emailService.sendPasswordResetEmail(email, token, frontendUrl);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(token, {
+        secret: this.configService.get('JWT_RESET_SECRET'),
+      });
+    } catch {
+      throw new BadRequestException('Token invalide ou expiré');
+    }
+
+    if (payload.purpose !== 'reset') {
+      throw new BadRequestException('Token invalide');
+    }
+
+    const user = await this.userRepository.findById(payload.sub);
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(user.id, {passwordHash: hashedPassword});
+    // Optionnel : supprimer tous les refresh tokens de l'utilisateur
   }
 }

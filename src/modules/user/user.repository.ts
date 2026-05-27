@@ -2,6 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { db, users, eq, and } from '../../database/db';
 import { UserInsert, UserSelect } from '../../database/db';
+import { cp } from 'fs';
 
 @Injectable()
 export class UserRepository {

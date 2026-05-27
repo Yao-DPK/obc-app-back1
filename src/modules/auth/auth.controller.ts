@@ -8,12 +8,19 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import type { Response, Request as ExpressRequest } from 'express';
 import { ApiController } from '../common/decorators/custom-prefix.decorator';
 import { OtpService } from '../otp/otp.service';
+import { EmailService } from '../email/email.service';
+import { UserRepository } from '../user/user.repository';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/resert-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService, private otpService: OtpService) {}
+  constructor(private authService: AuthService, 
+              private otpService: OtpService,
+              private emailService: EmailService,
+              private userRepository: UserRepository) {}
 
-   @Public()
+  @Public()
   @Post('send-verification-email')
   async sendVerificationEmail(@Body('email') email: string) {
     if (!email) throw new BadRequestException('Email requis');
@@ -63,5 +70,21 @@ export class AuthController {
   @Get('me')
   getProfile(@Request() req: ExpressRequest) {
     return req.user;
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(forgotPasswordDto.email);
+    return { message: 'Si cet email existe, vous recevrez un lien de réinitialisation.' };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.newPassword);
+    return { message: 'Mot de passe modifié avec succès.' };
   }
 }

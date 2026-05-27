@@ -10,6 +10,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.stategy';
 import { OtpModule } from '../otp/otp.module';
+import { EmailService } from '../email/email.service';
 
 
 @Module({
@@ -28,7 +29,8 @@ import { OtpModule } from '../otp/otp.module';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
-    }
+    },
+    EmailService
   ],
   controllers: [AuthController],
   exports: [AuthService],
