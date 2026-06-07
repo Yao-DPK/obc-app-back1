@@ -22,7 +22,9 @@ export class GoogleAuthController {
     console.log(`📥 Callback route atteinte avec le code : ${code}`);
 
     if (!code) {
-      return res.status(HttpStatus.BAD_REQUEST).send('Missing authorization code');
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .send('Missing authorization code');
     }
 
     try {
@@ -32,10 +34,14 @@ export class GoogleAuthController {
       if (tokens.refresh_token) {
         console.log(`🔑 Refresh Token: ${tokens.refresh_token}`);
       } else {
-        console.warn('⚠️ Aucun refresh token reçu. Vérifiez access_type=offline');
+        console.warn(
+          '⚠️ Aucun refresh token reçu. Vérifiez access_type=offline',
+        );
       }
 
-      console.log(`🕒 Access Token (début): ${tokens.access_token?.substring(0, 10)}...`);
+      console.log(
+        `🕒 Access Token (début): ${tokens.access_token?.substring(0, 10)}...`,
+      );
 
       // Définir le type de contenu HTML
       res.type('text/html');
@@ -45,7 +51,9 @@ export class GoogleAuthController {
       `);
     } catch (error: any) {
       console.error('❌ Erreur échange code:', error);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(`Erreur: ${error.message}`);
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .send(`Erreur: ${error.message}`);
     }
   }
 }

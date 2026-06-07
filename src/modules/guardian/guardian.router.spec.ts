@@ -31,13 +31,24 @@ describe('GuardianRouter', () => {
 
   describe('linkPlayer', () => {
     it('should call guardianService.linkPlayer with guardianId, playerId, permissions', async () => {
-      const input = { guardianId: 1, playerId: 2, permissions: { canPay: true } };
-      const mockLink = { id: 1, guardianId: 1, playerId: 2, permissions: { canPay: true } };
+      const input = {
+        guardianId: 1,
+        playerId: 2,
+        permissions: { canPay: true },
+      };
+      const mockLink = {
+        id: 1,
+        guardianId: 1,
+        playerId: 2,
+        permissions: { canPay: true },
+      };
       mockGuardianService.linkPlayer.mockResolvedValue(mockLink);
 
       const result = await router.linkPlayer(input);
 
-      expect(guardianService.linkPlayer).toHaveBeenCalledWith(1, 2, { canPay: true });
+      expect(guardianService.linkPlayer).toHaveBeenCalledWith(1, 2, {
+        canPay: true,
+      });
       expect(result).toEqual(mockLink);
     });
 

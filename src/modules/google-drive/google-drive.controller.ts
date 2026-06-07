@@ -1,4 +1,10 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GoogleDriveService } from './google-drive.service';
 import type { Request } from 'express';
@@ -13,7 +19,10 @@ export class GoogleDriveController {
   @Public()
   @Post('file')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
     // file contient buffer, originalname, mimetype, size...
     if (!file) {
       throw new Error('No file uploaded');

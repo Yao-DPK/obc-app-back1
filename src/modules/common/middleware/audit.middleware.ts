@@ -11,14 +11,20 @@ export class AuditMiddleware implements NestMiddleware {
       // Ne logguer que certaines méthodes (POST, PUT, PATCH, DELETE)
       if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
         const userId = (req as any).user?.sub || null;
-        db.insert(auditLogs).values({
-          userId,
-          action: `${req.method} ${req.route?.path || req.url}`,
-          oldValue: req.body ? JSON.stringify(req.body) : null,
-          newValue: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : null,
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        }).catch(err => console.error('Audit log failed', err));
+        db.insert(auditLogs)
+          .values({
+            userId,
+            action: `${req.method} ${req.route?.path || req.url}`,
+            oldValue: req.body ? JSON.stringify(req.body) : null,
+            newValue: body
+              ? typeof body === 'string'
+                ? body
+                : JSON.stringify(body)
+              : null,
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+          })
+          .catch((err) => console.error('Audit log failed', err));
       }
       return originalSend.call(this, body);
     };

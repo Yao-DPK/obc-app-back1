@@ -3,14 +3,26 @@ import Busboy from 'busboy';
 
 export interface MultipartParseResult {
   fields: Record<string, any>;
-  files: { fieldname: string; filename: string; buffer: Buffer; mimetype: string }[];
+  files: {
+    fieldname: string;
+    filename: string;
+    buffer: Buffer;
+    mimetype: string;
+  }[];
 }
 
-export async function parseMultipart(req: Request): Promise<MultipartParseResult> {
+export async function parseMultipart(
+  req: Request,
+): Promise<MultipartParseResult> {
   return new Promise((resolve, reject) => {
     const busboy = Busboy({ headers: req.headers });
     const fields: Record<string, any> = {};
-    const files: { fieldname: string; filename: string; buffer: Buffer; mimetype: string }[] = [];
+    const files: {
+      fieldname: string;
+      filename: string;
+      buffer: Buffer;
+      mimetype: string;
+    }[] = [];
 
     busboy.on('field', (fieldname, value) => {
       fields[fieldname] = value;
@@ -20,7 +32,12 @@ export async function parseMultipart(req: Request): Promise<MultipartParseResult
       const chunks: Buffer[] = [];
       file.on('data', (chunk) => chunks.push(chunk));
       file.on('end', () => {
-        files.push({ fieldname, filename, buffer: Buffer.concat(chunks), mimetype: mimeType });
+        files.push({
+          fieldname,
+          filename,
+          buffer: Buffer.concat(chunks),
+          mimetype: mimeType,
+        });
       });
     });
 

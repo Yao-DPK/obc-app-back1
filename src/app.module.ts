@@ -16,13 +16,24 @@ import { GuardianController } from './modules/guardian/guardian.controller';
 import { EmailModule } from './modules/email/email.module';
 import { OtpModule } from './modules/otp/otp.module';
 
-const isProduction = process.env.NODE_ENV === 'prod'
+const isProduction = process.env.NODE_ENV === 'prod';
 
 @Module({
   imports: [
     /* TRPCModule.forRoot({
       autoSchemaFile: './trpc',
-    }), */ AuthModule, GoogleDriveModule, ConfigModule.forRoot({ isGlobal: true }), GoogleAuthModule, DocumentModule, UserModule, GuardianModule, PaymentModule, InscriptionModule, EmailModule, OtpModule],
+    }), */ AuthModule,
+    GoogleDriveModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    GoogleAuthModule,
+    DocumentModule,
+    UserModule,
+    GuardianModule,
+    PaymentModule,
+    InscriptionModule,
+    EmailModule,
+    OtpModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -10,20 +10,23 @@ export type CreateDocumentInput = {
   publicUrl: string;
   isObligatory?: boolean;
 };
- 
+
 export type UpdateDocumentValidationInput = {
   validatedAt?: Date | null;
 };
 
 export class DocumentRepository {
   async create(data: CreateDocumentInput) {
-    const [doc] = await db.insert(documents).values({
-      userId: data.userId,
-      type: data.type,
-      fileId: data.fileId,
-      publicUrl: data.publicUrl,
-      isObligatory: data.isObligatory ?? false,
-    }).returning();
+    const [doc] = await db
+      .insert(documents)
+      .values({
+        userId: data.userId,
+        type: data.type,
+        fileId: data.fileId,
+        publicUrl: data.publicUrl,
+        isObligatory: data.isObligatory ?? false,
+      })
+      .returning();
     return doc;
   }
 
@@ -33,17 +36,22 @@ export class DocumentRepository {
   }
 
   async findByUser(userId: number) {
-    return await db.select().from(documents).where(eq(documents.userId, userId));
+    return await db
+      .select()
+      .from(documents)
+      .where(eq(documents.userId, userId));
   }
 
   async findByUserAndType(userId: number, type: string) {
-    return await db.select().from(documents).where(
-      and(eq(documents.userId, userId), eq(documents.type, type))
-    );
+    return await db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.userId, userId), eq(documents.type, type)));
   }
 
   async updateValidation(id: number, data: UpdateDocumentValidationInput) {
-    const [updated] = await db.update(documents)
+    const [updated] = await db
+      .update(documents)
       .set({ validatedAt: data.validatedAt ?? new Date() })
       .where(eq(documents.id, id))
       .returning();
@@ -51,12 +59,16 @@ export class DocumentRepository {
   }
 
   async delete(id: number) {
-    const [deleted] = await db.delete(documents).where(eq(documents.id, id)).returning();
+    const [deleted] = await db
+      .delete(documents)
+      .where(eq(documents.id, id))
+      .returning();
     return deleted;
   }
 
   async setObligatoryStatus(id: number, isObligatory: boolean) {
-    const [updated] = await db.update(documents)
+    const [updated] = await db
+      .update(documents)
       .set({ isObligatory })
       .where(eq(documents.id, id))
       .returning();

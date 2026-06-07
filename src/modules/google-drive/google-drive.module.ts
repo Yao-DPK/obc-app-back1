@@ -6,6 +6,6 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [ConfigModule],
   providers: [GoogleDriveService],
-  controllers: [GoogleDriveController]
+  controllers: [GoogleDriveController],
 })
 export class GoogleDriveModule {}

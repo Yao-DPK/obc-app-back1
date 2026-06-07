@@ -54,17 +54,24 @@ describe('UserRouter', () => {
       const result = await router.updateProfile(input);
 
       expect(userService.updateProfile).toHaveBeenCalledTimes(1);
-      expect(userService.updateProfile).toHaveBeenCalledWith(1, { email: 'new@example.com' });
+      expect(userService.updateProfile).toHaveBeenCalledWith(1, {
+        email: 'new@example.com',
+      });
       expect(result).toEqual({ success: true });
     });
 
     it('should work with notificationPreferences only', async () => {
-      const input = { userId: 2, notificationPreferences: { email: false, sms: true } };
+      const input = {
+        userId: 2,
+        notificationPreferences: { email: false, sms: true },
+      };
       mockUserService.updateProfile.mockResolvedValue({ success: true });
 
       const result = await router.updateProfile(input);
 
-      expect(userService.updateProfile).toHaveBeenCalledWith(2, { notificationPreferences: { email: false, sms: true } });
+      expect(userService.updateProfile).toHaveBeenCalledWith(2, {
+        notificationPreferences: { email: false, sms: true },
+      });
       expect(result).toEqual({ success: true });
     });
   });
@@ -77,7 +84,11 @@ describe('UserRouter', () => {
       const result = await router.changePassword(input);
 
       expect(userService.changePassword).toHaveBeenCalledTimes(1);
-      expect(userService.changePassword).toHaveBeenCalledWith(1, 'old123', 'new456');
+      expect(userService.changePassword).toHaveBeenCalledWith(
+        1,
+        'old123',
+        'new456',
+      );
       expect(result).toEqual({ success: true });
     });
   });

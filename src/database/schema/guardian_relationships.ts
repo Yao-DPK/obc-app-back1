@@ -1,15 +1,30 @@
-import { pgTable, integer, jsonb, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  integer,
+  jsonb,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const guardianRelationships = pgTable('guardian_relationships', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  guardianId: integer('guardian_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  playerId: integer('player_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  relationship: varchar('relationship', { length: 30 }).$type<'Mère' | 'Père' | 'Tuteur'>().default('Mère').notNull(),
-  permissions: jsonb('permissions').$type<{
-    canPay?: boolean;
-    canRegister?: boolean;
-  }>().default({ canPay: true, canRegister: false }),
+  guardianId: integer('guardian_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  playerId: integer('player_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  relationship: varchar('relationship', { length: 30 })
+    .$type<'Mère' | 'Père' | 'Tuteur'>()
+    .default('Mère')
+    .notNull(),
+  permissions: jsonb('permissions')
+    .$type<{
+      canPay?: boolean;
+      canRegister?: boolean;
+    }>()
+    .default({ canPay: true, canRegister: false }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

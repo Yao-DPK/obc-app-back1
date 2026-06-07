@@ -11,7 +11,7 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get('EMAIL_HOST'),
       port: this.configService.get('EMAIL_PORT'),
-      secure: false,          // true pour port 465, false pour 587
+      secure: false, // true pour port 465, false pour 587
       auth: {
         user: this.configService.get('EMAIL_USER'),
         pass: this.configService.get('EMAIL_PASSWORD'),
@@ -39,10 +39,14 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetEmail(to: string, token: string, frontendUrl: string): Promise<void> {
-  const resetLink = `${frontendUrl}/reset-password?token=${token}`;
-  const subject = 'Réinitialisation de votre mot de passe';
-  const html = `
+  async sendPasswordResetEmail(
+    to: string,
+    token: string,
+    frontendUrl: string,
+  ): Promise<void> {
+    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+    const subject = 'Réinitialisation de votre mot de passe';
+    const html = `
     <div style="font-family: Arial, sans-serif;">
       <h2>Réinitialisation du mot de passe</h2>
       <p>Cliquez sur le lien ci-dessous pour définir un nouveau mot de passe :</p>
@@ -51,6 +55,6 @@ export class EmailService {
       <p>Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.</p>
     </div>
   `;
-  await this.transporter.sendMail({ to, subject, html });
-}
+    await this.transporter.sendMail({ to, subject, html });
+  }
 }

@@ -18,14 +18,24 @@ export class UserService {
     return { success: true };
   }
 
-  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+  async changePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
     const valid = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!valid) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid old password' });
+    if (!valid)
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid old password',
+      });
     const newHash = await bcrypt.hash(newPassword, 10);
-    await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ passwordHash: newHash })
+      .where(eq(users.id, userId));
     return { success: true };
   }
-  
 }

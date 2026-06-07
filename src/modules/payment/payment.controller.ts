@@ -1,6 +1,18 @@
-import { Controller, Post, Body, Get, Param, Patch, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Patch,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDeclarationSchema, VerifyPaymentSchema } from './dto/payment.dto';
+import {
+  CreatePaymentDeclarationSchema,
+  VerifyPaymentSchema,
+} from './dto/payment.dto';
 
 @Controller('payments')
 export class PaymentController {

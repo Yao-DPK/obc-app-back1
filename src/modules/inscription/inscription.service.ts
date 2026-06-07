@@ -17,20 +17,39 @@ export class InscriptionService {
     private documentService: DocumentService,
   ) {}
 
-  async fileUpload(file: { buffer: Buffer; filename: string; mimetype: string }) : Promise<{fileId: string, fileUrl: string}>{
-      const fileBuffer = await file.buffer;
-      const originalName = file.filename;
-      const mimeType = file.mimetype;
-      const fileUpload: {id: string, name: string, webContentLink: string, webViewLink: string} = await this.googleDriveService.uploadFile(fileBuffer, originalName, mimeType);
-      const fileId = fileUpload.webContentLink; 
-      const fileUrl = fileUpload.webContentLink; // ajustez selon votre 
-      return {fileId: fileId, fileUrl: fileUrl}
+  async fileUpload(file: {
+    buffer: Buffer;
+    filename: string;
+    mimetype: string;
+  }): Promise<{ fileId: string; fileUrl: string }> {
+    const fileBuffer = await file.buffer;
+    const originalName = file.filename;
+    const mimeType = file.mimetype;
+    const fileUpload: {
+      id: string;
+      name: string;
+      webContentLink: string;
+      webViewLink: string;
+    } = await this.googleDriveService.uploadFile(
+      fileBuffer,
+      originalName,
+      mimeType,
+    );
+    const fileId = fileUpload.webContentLink;
+    const fileUrl = fileUpload.webContentLink; // ajustez selon votre
+    return { fileId: fileId, fileUrl: fileUrl };
   }
 
   async preRegister(
     data: z.infer<typeof FullRegistrationSchema>,
     signature: { buffer: Buffer; filename: string; mimetype: string },
-    inscriptionFiles: { buffer: Buffer; filetype: string; filename: string; mimetype: string; isObligatory?: boolean }[],
+    inscriptionFiles: {
+      buffer: Buffer;
+      filetype: string;
+      filename: string;
+      mimetype: string;
+      isObligatory?: boolean;
+    }[],
   ) {
     const { step1, step2 } = data;
 
@@ -115,16 +134,20 @@ export class InscriptionService {
     // 7. Envoyer des notifications ? (mail au joueur pour l'informer que l'inscription est soumise)
 
     // 8. Enregistrement des documents de l'utilisateur
-   
-    
+
     let filesUploaded: any[] = [];
     for (let idx = 0; idx < inscriptionFiles.length; idx++) {
       const f = inscriptionFiles[idx];
       const uploaded_file = await this.fileUpload(f);
-      let document_created = await this.documentService.create({userId: joueur.id, type: f.filetype, fileId: uploaded_file.fileId, publicUrl: uploaded_file.fileUrl, isObligatory: true});
+      let document_created = await this.documentService.create({
+        userId: joueur.id,
+        type: f.filetype,
+        fileId: uploaded_file.fileId,
+        publicUrl: uploaded_file.fileUrl,
+        isObligatory: true,
+      });
       filesUploaded.push(document_created);
     }
-    
 
     return { joueur, guardiansCreated, filesUploaded };
   }

@@ -1,10 +1,34 @@
-import { Controller, Get, Param, Patch, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Body,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateProfileSchema, ChangePasswordSchema } from './dto/user.dto';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { UserRepository } from './user.repository';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private userRepository: UserRepository,
+  ) {}
+
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getUsers() {
+    return this.userRepository.getUsers();
+  }
 
   @Get(':userId')
   async getProfile(@Param('userId') userId: string) {
@@ -21,6 +45,33 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async changePassword(@Param('userId') userId: string, @Body() input: any) {
     const { oldPassword, newPassword } = input;
-    return this.userService.changePassword(parseInt(userId, 10), oldPassword, newPassword);
+    return this.userService.changePassword(
+      parseInt(userId, 10),
+      oldPassword,
+      newPassword,
+    );
+  }
+
+  @Patch(':userId/validate-registration')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Super_Admin)
+  async validateRegistration(@Param('userId') userId: string) {
+    const id = parseInt(userId);
+    const user = await this.userRepository.findById(id);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    // Mettre à jour le statut
+    await this.userRepository.update(id, { registrationStatus: 'inscrit' });
+    // Optionnel : envoyer un email de bienvenue
+    return { message: 'Inscription validée' };
+  }
+
+  @Patch(':userId/reject-registration')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Super_Admin)
+  async rejectRegistration(@Param('userId') userId: string) {
+    const id = parseInt(userId);
+    // Soit supprimer l'utilisateur, soit passer à 'rejeté'
+    await this.userRepository.update(id, { registrationStatus: 'rejeté' });
+    return { message: 'Inscription rejetée' };
   }
 }

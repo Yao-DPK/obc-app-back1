@@ -20,15 +20,14 @@ export const InscriptionDocument = z.object({
   documentName: z.string(),
   document: z.file(),
   isMandatory: z.boolean(),
-})
-
+});
 
 // Schéma principal de pré-inscription
 export const PreRegistrationSchema = z.object({
   // Infos du compte
   email: z.email(),
   password: z.string().min(6),
-  
+
   // Infos personnelles du joueur
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -38,22 +37,19 @@ export const PreRegistrationSchema = z.object({
   address: z.string().optional(),
   school: z.string().optional(),
   class: z.string().optional(),
-  
+
   // Mode autonome ou avec garant
   selfManaged: z.boolean().default(false),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
-  
+
   // Liste des garants (si non autonome)
   guardians: z.array(GuardianSchema).default([]).optional(),
 });
-
-
 
 export const FullRegistrationSchema = z.object({
   step1: PreRegistrationSchema,
   step2: AttestationSchema,
 });
-
 
 export type PreRegistrationDto = z.infer<typeof PreRegistrationSchema>;

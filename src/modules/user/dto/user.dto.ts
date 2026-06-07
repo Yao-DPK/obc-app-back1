@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 export const UpdateProfileSchema = z.object({
   email: z.string().email().optional(),
-  notificationPreferences: z.object({
-    email: z.boolean().optional(),
-    sms: z.boolean().optional(),
-    push: z.boolean().optional(),
-  }).optional(),
+  notificationPreferences: z
+    .object({
+      email: z.boolean().optional(),
+      sms: z.boolean().optional(),
+      push: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const ChangePasswordSchema = z.object({

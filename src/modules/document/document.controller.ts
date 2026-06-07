@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { DocumentService } from './document.service';
 import { z } from 'zod';
 import { Public } from '../common/decorators/public.decorator';
@@ -20,4 +28,4 @@ export class DocumentController {
     const parsed = parseInt(userId, 10);
     return this.documentsService.findByUser(parsed);
   }
-} 
+}

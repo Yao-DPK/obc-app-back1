@@ -1,10 +1,22 @@
-import { pgTable, serial, varchar, timestamp, text, integer, jsonb, date } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  varchar,
+  timestamp,
+  text,
+  integer,
+  jsonb,
+  date,
+} from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).unique().notNull(),
   passwordHash: text('password_hash').notNull(),
-  role: varchar('role', { length: 50 }).$type<'parent' | 'player' | 'admin' | 'super_admin'>().default('parent').notNull(),
+  role: varchar('role', { length: 50 })
+    .$type<'parent' | 'player' | 'admin' | 'super_admin'>()
+    .default('parent')
+    .notNull(),
 
   // Nouveaux champs pour les informations personnelles
   firstName: varchar('first_name', { length: 100 }),
@@ -21,14 +33,28 @@ export const users = pgTable('users', {
   emergencyContactPhone: varchar('emergency_contact_phone', { length: 20 }),
 
   // Statuts d'inscription
-  registrationStatus: varchar('registration_status', { length: 20 }).$type<'pre_inscrit' | 'inscrit' | 'actif' | 'suspendu' | 'parent_invité' | 'validé'>().default('pre_inscrit').notNull(),
-  registrationStep: varchar('registration_step', { length: 50 }).default('formulaire'),
+  registrationStatus: varchar('registration_status', { length: 20 })
+    .$type<
+      | 'pre_inscrit'
+      | 'inscrit'
+      | 'rejeté'
+      | 'suspendu'
+      | 'parent_invité'
+      | 'parent_inscrit'
+    >()
+    .default('pre_inscrit')
+    .notNull(),
+  registrationStep: varchar('registration_step', { length: 50 }).default(
+    'formulaire',
+  ),
 
-  notificationPreferences: jsonb('notification_preferences').$type<{
-    email?: boolean;
-    sms?: boolean;
-    push?: boolean;
-  }>().default({ email: true, sms: false, push: true }),
+  notificationPreferences: jsonb('notification_preferences')
+    .$type<{
+      email?: boolean;
+      sms?: boolean;
+      push?: boolean;
+    }>()
+    .default({ email: true, sms: false, push: true }),
 
   attestationData: jsonb('attestation_data').$type<{
     signatoryType: 'self' | 'guardian';

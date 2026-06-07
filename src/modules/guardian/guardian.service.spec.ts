@@ -80,7 +80,9 @@ describe('GuardianService', () => {
       // Simule l'insertion
       (db.insert as jest.Mock).mockReturnValueOnce({
         values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([{ id: 10, guardianId: 1, playerId: 2 }]),
+          returning: jest
+            .fn()
+            .mockResolvedValue([{ id: 10, guardianId: 1, playerId: 2 }]),
         }),
       });
 

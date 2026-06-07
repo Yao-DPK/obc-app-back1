@@ -38,7 +38,13 @@ describe('DocumentRouter', () => {
 
   describe('create', () => {
     it('should call documentService.create with input and return result', async () => {
-      const input = { userId: 1, type: 'medical', fileId: 'abc', publicUrl: 'https://example.com', isObligatory: true };
+      const input = {
+        userId: 1,
+        type: 'medical',
+        fileId: 'abc',
+        publicUrl: 'https://example.com',
+        isObligatory: true,
+      };
       const mockDoc = { id: 1, ...input, uploadedAt: new Date() };
       mockDocumentService.create.mockResolvedValue(mockDoc);
 
@@ -53,7 +59,7 @@ describe('DocumentRouter', () => {
     it('should call db.select with correct where clause', async () => {
       const input = { userId: 2 };
       const mockDocs = [{ id: 1, userId: 2, type: 'test' }];
-      
+
       const whereMock = jest.fn().mockResolvedValue(mockDocs);
       const fromMock = jest.fn().mockReturnValue({ where: whereMock });
       (db.select as jest.Mock).mockReturnValue({ from: fromMock });

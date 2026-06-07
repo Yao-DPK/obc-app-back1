@@ -17,17 +17,37 @@ export class UserRepository {
     return user || null;
   }
 
+  async getUsers(): Promise<UserSelect[]> {
+    const found_users = await db.select().from(users);
+    return found_users;
+  }
+
   async findById(id: number): Promise<UserSelect | null> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || null;
   }
 
-  async update(id: number, data: Partial<UserInsert>): Promise<UserSelect | null> {
-    const [updated] = await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, id)).returning();
+  async update(
+    id: number,
+    data: Partial<UserInsert>,
+  ): Promise<UserSelect | null> {
+    const [updated] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
     return updated || null;
   }
 
-  async findByStatus(status: 'pre_inscrit' | 'inscrit' | 'actif' | 'suspendu' | 'parent_invité' | 'validé'): Promise<UserSelect[]> {
+  async findByStatus(
+    status:
+      | 'pre_inscrit'
+      | 'inscrit'
+      | 'rejeté'
+      | 'suspendu'
+      | 'parent_invité'
+      | 'parent_inscrit',
+  ): Promise<UserSelect[]> {
     return db.select().from(users).where(eq(users.registrationStatus, status));
   }
 }

@@ -6,7 +6,10 @@ import { db, guardianRelationships } from '../../database/db';
 @Injectable()
 export class GuardianRelationshipsRepository {
   async create(data: any) {
-    const [result] = await db.insert(guardianRelationships).values(data).returning();
+    const [result] = await db
+      .insert(guardianRelationships)
+      .values(data)
+      .returning();
     return result;
   }
   // ... autres méthodes

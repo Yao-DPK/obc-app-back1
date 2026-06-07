@@ -33,7 +33,13 @@ describe('DocumentsController', () => {
   });
 
   it('should create a document', async () => {
-    const input = { userId: 1, type: 'test', fileId: 'abc', publicUrl: 'http://ex.com', isObligatory: false };
+    const input = {
+      userId: 1,
+      type: 'test',
+      fileId: 'abc',
+      publicUrl: 'http://ex.com',
+      isObligatory: false,
+    };
     const result = await controller.create(input);
     expect(service.create).toHaveBeenCalledWith(input);
     expect(result).toEqual({ id: 1 });

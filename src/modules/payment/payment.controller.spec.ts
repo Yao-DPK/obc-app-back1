@@ -23,7 +23,13 @@ describe('PaymentController', () => {
   });
 
   it('should create a payment declaration', async () => {
-    const input = { userId: 1, amount: 50, method: 'wave', reason: 'test', playerIds: [2] };
+    const input = {
+      userId: 1,
+      amount: 50,
+      method: 'wave',
+      reason: 'test',
+      playerIds: [2],
+    };
     const result = await controller.create(input);
     const { userId, ...data } = input;
     expect(service.create).toHaveBeenCalledWith(userId, data);

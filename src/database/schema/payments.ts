@@ -1,9 +1,19 @@
-import { pgTable, serial, integer, decimal, varchar, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  integer,
+  decimal,
+  varchar,
+  jsonb,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const payments = pgTable('payments', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   method: varchar('method', { length: 20 }).notNull(), // 'wave', 'orange_money', 'cash'
   transactionReference: varchar('transaction_reference', { length: 100 }),

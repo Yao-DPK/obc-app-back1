@@ -12,7 +12,6 @@ import { JwtStrategy } from './jwt.stategy';
 import { OtpModule } from '../otp/otp.module';
 import { EmailService } from '../email/email.service';
 
-
 @Module({
   imports: [
     UserModule,
@@ -22,15 +21,16 @@ import { EmailService } from '../email/email.service';
       signOptions: { expiresIn: '15m' },
     }),
     PassportModule,
-    OtpModule
+    OtpModule,
   ],
-  providers: [AuthService, 
+  providers: [
+    AuthService,
     JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
-    EmailService
+    EmailService,
   ],
   controllers: [AuthController],
   exports: [AuthService],

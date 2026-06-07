@@ -25,13 +25,29 @@ describe('PaymentService', () => {
     jest.clearAllMocks();
 
     mockWhere = jest.fn();
-    mockSelect = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue({ where: mockWhere }) });
+    mockSelect = jest
+      .fn()
+      .mockReturnValue({
+        from: jest.fn().mockReturnValue({ where: mockWhere }),
+      });
     (db.select as jest.Mock) = mockSelect;
 
-    mockUpdate = jest.fn().mockReturnValue({ set: jest.fn().mockReturnValue({ where: jest.fn().mockReturnValue({ returning: jest.fn() }) }) });
+    mockUpdate = jest
+      .fn()
+      .mockReturnValue({
+        set: jest
+          .fn()
+          .mockReturnValue({
+            where: jest.fn().mockReturnValue({ returning: jest.fn() }),
+          }),
+      });
     (db.update as jest.Mock) = mockUpdate;
 
-    mockInsert = jest.fn().mockReturnValue({ values: jest.fn().mockReturnValue({ returning: jest.fn() }) });
+    mockInsert = jest
+      .fn()
+      .mockReturnValue({
+        values: jest.fn().mockReturnValue({ returning: jest.fn() }),
+      });
     (db.insert as jest.Mock) = mockInsert;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -43,11 +59,22 @@ describe('PaymentService', () => {
 
   describe('create', () => {
     it('should create a payment declaration', async () => {
-      const mockReturning = jest.fn().mockResolvedValue([{ id: 1, userId: 1, amount: 25.5, status: 'pending' }]);
-      const mockValues = jest.fn().mockReturnValue({ returning: mockReturning });
+      const mockReturning = jest
+        .fn()
+        .mockResolvedValue([
+          { id: 1, userId: 1, amount: 25.5, status: 'pending' },
+        ]);
+      const mockValues = jest
+        .fn()
+        .mockReturnValue({ returning: mockReturning });
       (db.insert as jest.Mock).mockReturnValue({ values: mockValues });
 
-      const data = { amount: 25.5, method: 'wave', reason: 'Mensuality', playerIds: [2] };
+      const data = {
+        amount: 25.5,
+        method: 'wave',
+        reason: 'Mensuality',
+        playerIds: [2],
+      };
       const result = await service.create(1, data);
       expect(result).toHaveProperty('id', 1);
       expect(result.userId).toBe(1);
@@ -66,8 +93,14 @@ describe('PaymentService', () => {
 
   describe('verify', () => {
     it('should verify a payment declaration', async () => {
-      const mockReturning = jest.fn().mockResolvedValue([{ id: 1, status: 'verified' }]);
-      const mockSet = jest.fn().mockReturnValue({ where: jest.fn().mockReturnValue({ returning: mockReturning }) });
+      const mockReturning = jest
+        .fn()
+        .mockResolvedValue([{ id: 1, status: 'verified' }]);
+      const mockSet = jest
+        .fn()
+        .mockReturnValue({
+          where: jest.fn().mockReturnValue({ returning: mockReturning }),
+        });
       (db.update as jest.Mock).mockReturnValue({ set: mockSet });
 
       const result = await service.verify(2, 1, 'verified');
@@ -76,11 +109,19 @@ describe('PaymentService', () => {
 
     it('should throw NOT_FOUND if payment does not exist', async () => {
       const mockReturning = jest.fn().mockResolvedValue([]);
-      const mockSet = jest.fn().mockReturnValue({ where: jest.fn().mockReturnValue({ returning: mockReturning }) });
+      const mockSet = jest
+        .fn()
+        .mockReturnValue({
+          where: jest.fn().mockReturnValue({ returning: mockReturning }),
+        });
       (db.update as jest.Mock).mockReturnValue({ set: mockSet });
 
-      await expect(service.verify(2, 999, 'verified')).rejects.toThrow(TRPCError);
-      await expect(service.verify(2, 999, 'verified')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+      await expect(service.verify(2, 999, 'verified')).rejects.toThrow(
+        TRPCError,
+      );
+      await expect(service.verify(2, 999, 'verified')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
     });
   });
 });

@@ -1,7 +1,10 @@
 import { Router, Mutation, Query, Input } from 'nestjs-trpc-v2';
 import { z } from 'zod';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDeclarationSchema, VerifyPaymentSchema } from './dto/payment.dto';
+import {
+  CreatePaymentDeclarationSchema,
+  VerifyPaymentSchema,
+} from './dto/payment.dto';
 
 @Router({ alias: 'paymentDeclaration' })
 export class PaymentRouter {

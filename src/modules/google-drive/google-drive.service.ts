@@ -17,7 +17,7 @@ export class GoogleDriveService implements OnModuleInit {
     this.oauth2Client = new google.auth.OAuth2(
       this.configService.get('GOOGLE_CLIENT_ID'),
       this.configService.get('GOOGLE_CLIENT_SECRET'),
-      this.configService.get('GOOGLE_REDIRECT_URI')
+      this.configService.get('GOOGLE_REDIRECT_URI'),
     );
 
     // Définir les credentials avec le refresh token
@@ -38,15 +38,14 @@ export class GoogleDriveService implements OnModuleInit {
     mimeType: string,
     folderId?: string,
   ) {
-    const targetFolderId = folderId || this.configService.get('GOOGLE_DRIVE_FOLDER_ID');
-    
+    const targetFolderId =
+      folderId || this.configService.get('GOOGLE_DRIVE_FOLDER_ID');
 
     try {
-      
       // Convertir le Buffer en Readable Stream
       const bufferStream = new Readable();
       bufferStream.push(fileBuffer);
-      bufferStream.push(null);   // signale la fin du stream
+      bufferStream.push(null); // signale la fin du stream
 
       const response = await this.drive.files.create({
         requestBody: {
@@ -55,7 +54,7 @@ export class GoogleDriveService implements OnModuleInit {
         },
         media: {
           mimeType: mimeType,
-          body: bufferStream,   // <- stream, pas Buffer
+          body: bufferStream, // <- stream, pas Buffer
         },
         fields: 'id, name, webViewLink, webContentLink',
       });

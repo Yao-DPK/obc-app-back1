@@ -8,6 +8,12 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
+  @IsString()
+  firstName?: string;
+
+  @IsString()
+  lastName?: string;
+
   @IsIn(['parent', 'player', 'admin', 'super_admin'])
-  role: 'parent' | 'player' | 'admin' | 'super_admin' ;
+  role: 'parent' | 'player' | 'admin' | 'super_admin';
 }
