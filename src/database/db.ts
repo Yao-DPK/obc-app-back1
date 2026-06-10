@@ -4,7 +4,8 @@ import * as schema from './schema';
 import dotenv from 'dotenv';
 
 // Charger les variables d'environnement
-dotenv.config();
+
+dotenv.config({ path: '.env' });
 
 const pool = new Pool({
   connectionString:

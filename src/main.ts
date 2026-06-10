@@ -12,19 +12,19 @@ async function createApp() {
     new ExpressAdapter(expressApp),
   );
 
-  console.log('VERCEL_ENV: ', process.env.VERCEL_ENV);
-  const frontendUrl = process.env.PUBLIC_APP_FRONT_BASE_URL;
-  const allowedOrigins: any = [];
-  if (frontendUrl)
-    frontendUrl
-      ? allowedOrigins.push(frontendUrl)
-      : allowedOrigins.push('http://localhost:5173');
 
-  if (process.env.NODE_ENV === 'production') {
-    allowedOrigins.push(process.env.FRONTEND_PRODUCTION_URL!);
+  const allowedOrigins: any = [];
+  if (process.env.ALLOWED_ORIGINS){
+    const ALLOWED_ORIGINS_LIST = process.env.ALLOWED_ORIGINS.split(',');
+    console.log("allowed Origins: ", process.env.ALLOWED_ORIGINS);
+    console.log("Register Code: ", process.env.REGISTER_SECRET);
+    for (let idx=0; idx < ALLOWED_ORIGINS_LIST.length; idx++ ){
+      const o = ALLOWED_ORIGINS_LIST[idx];
+      allowedOrigins.push(o);
+    }
   }
 
-  if (process.env.VERCEL_ENV === 'preview') {
+  if (process.env.FRONTEND_PLATFORM === 'VERCEL') {
     allowedOrigins.push(
       '/^https:\/\/obc-app-front1-.*-yao-dpks-projects\.vercel\.app$/',
     );

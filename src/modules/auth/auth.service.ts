@@ -66,6 +66,14 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    if (!dto.secretCode){
+      throw new UnauthorizedException("Vous n'avez pas accès à cette opération");
+    }
+
+    if (dto.secretCode !== process.env.REGISTER_CODE){
+      throw new UnauthorizedException("Vous n'avez pas accès à cette opération");
+    }
+
     const existingUser = await this.userRepository.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('Email already exists');

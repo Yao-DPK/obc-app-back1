@@ -14,6 +14,9 @@ export class RegisterDto {
   @IsString()
   lastName?: string;
 
+  @IsString()
+  secretCode: string;
+
   @IsIn(['parent', 'player', 'admin', 'super_admin'])
   role: 'parent' | 'player' | 'admin' | 'super_admin';
 }
