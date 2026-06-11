@@ -67,10 +67,10 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     if (!dto.secretCode){
-      throw new UnauthorizedException("Vous n'avez pas accès à cette opération");
+      throw new UnauthorizedException("Code Secret Manquant");
     }
 
-    if (dto.secretCode !== process.env.REGISTER_CODE){
+    if (dto.secretCode != process.env.REGISTER_SECRET){
       throw new UnauthorizedException("Vous n'avez pas accès à cette opération");
     }
 

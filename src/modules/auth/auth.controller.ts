@@ -63,6 +63,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
+    console.log('Received login request');
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
