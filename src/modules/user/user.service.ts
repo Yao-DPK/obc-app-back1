@@ -8,7 +8,7 @@ import { db, eq } from '../../database/db';
 export class UserService {
   async getProfile(userId: number) {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
+    if (!user) throw new Error('NOT_FOUND');
     const { passwordHash, ...safeUser } = user;
     return safeUser;
   }
@@ -24,13 +24,12 @@ export class UserService {
     newPassword: string,
   ) {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
+    if (!user) throw new Error('NOT_FOUND' );
     const valid = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!valid)
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Invalid old password',
-      });
+      throw new Error(
+        'Invalid old password',
+      );
     const newHash = await bcrypt.hash(newPassword, 10);
     await db
       .update(users)

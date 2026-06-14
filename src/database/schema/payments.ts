@@ -12,6 +12,7 @@ import {
 import { users } from './users';
 import { KayDevMetadata } from '@/types/payment.types';
 
+/* Stocke les paiements réalisés et en cours*/
 export const payments = pgTable('payments', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
@@ -31,7 +32,7 @@ export const payments = pgTable('payments', {
   verifiedAt: timestamp('verified_at'),
 });
 
-
+/* Stocke les types de paiements */
 export const paymentEvents = pgTable('payment_events', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -46,6 +47,7 @@ export const paymentEvents = pgTable('payment_events', {
 });
 
 
+/* Stocke les paiements déclenchés */
 export const paymentIntents = pgTable('payment_intents', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id).notNull(),
@@ -63,13 +65,18 @@ export const paymentIntents = pgTable('payment_intents', {
   expiresAt: timestamp('expires_at'),
 });
 
+
+/* Stocke les paiements obligatoires */
 export const paymentObligations = pgTable('payment_obligations', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(), // qui doit payer (parent ou joueur)
   playerId: integer('player_id').references(() => users.id), // optionnel : joueur concerné
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  amount: decimal('amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
   dueDate: date('due_date').notNull(),
   description: varchar('description', { length: 255 }).notNull(), // "Inscription annuelle 2025", "Mensualité juin"
   status: varchar('status', { length: 20 }).default('pending').notNull(), // pending, paid, overdue, cancelled
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+
+export type ObligationInsert = typeof paymentObligations.$inferInsert;
+export type ObligationSelect = typeof paymentObligations.$inferSelect;
