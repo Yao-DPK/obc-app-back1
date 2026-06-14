@@ -46,7 +46,7 @@ describe('DocumentsController', () => {
   });
 
   it('should find documents by user', async () => {
-    const result = await controller.findByUser('1');
+    const result = await controller.findByUser(1);
     expect(result).toEqual([{ id: 1, userId: 1 }]);
   });
 });
