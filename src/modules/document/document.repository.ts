@@ -1,6 +1,7 @@
-// document.repository.ts
+// apps/api/src/modules/documents/document.repository.ts
 import { db } from 'src/database/db';
 import { documents } from '../../database/schema';
+import type { Document } from './document.dto';
 import { eq, and } from 'drizzle-orm';
 
 export type CreateDocumentInput = {
@@ -9,10 +10,13 @@ export type CreateDocumentInput = {
   fileId: string;
   publicUrl: string;
   isObligatory?: boolean;
+  documentStatus?: 'En attente de Validation' | 'Validé' | 'Rejeté' | 'Expiré' | 'Invalide';
 };
 
 export type UpdateDocumentValidationInput = {
-  validatedAt?: Date | null;
+  documentStatus: 'Validé' | 'Rejeté' | 'Expiré' | 'Invalide' | 'En attente de Validation';
+  validatedAt: Date;
+  validatedBy: number;
 };
 
 export class DocumentRepository {
@@ -25,6 +29,7 @@ export class DocumentRepository {
         fileId: data.fileId,
         publicUrl: data.publicUrl,
         isObligatory: data.isObligatory ?? false,
+        documentStatus: data.documentStatus ?? 'En attente de Validation',
       })
       .returning();
     return doc;
@@ -34,6 +39,12 @@ export class DocumentRepository {
     const [doc] = await db.select().from(documents).where(eq(documents.id, id));
     return doc;
   }
+
+  async findPending(){
+    const docs = await db.select().from(documents).where(eq(documents.documentStatus, 'En attente de Validation'));
+    return docs.length;
+  }
+
 
   async findByUser(userId: number) {
     return await db
@@ -49,10 +60,23 @@ export class DocumentRepository {
       .where(and(eq(documents.userId, userId), eq(documents.type, type)));
   }
 
+  async update(id: number, data: Partial<Omit<Document, "id">>) {
+    const [updated] = await db
+      .update(documents)
+      .set(data)
+      .where(eq(documents.id, id))
+      .returning();
+    return updated;
+  }
+
   async updateValidation(id: number, data: UpdateDocumentValidationInput) {
     const [updated] = await db
       .update(documents)
-      .set({ validatedAt: data.validatedAt ?? new Date() })
+      .set({
+        documentStatus: data.documentStatus,
+        validatedAt: data.validatedAt,
+        validatedBy: data.validatedBy,
+      })
       .where(eq(documents.id, id))
       .returning();
     return updated;
@@ -73,5 +97,10 @@ export class DocumentRepository {
       .where(eq(documents.id, id))
       .returning();
     return updated;
+  }
+
+  async areAllDocumentsValid(userId: number): Promise<boolean> {
+    const userDocs = await this.findByUser(userId);
+    return userDocs.every(doc => doc.documentStatus === 'Validé');
   }
 }

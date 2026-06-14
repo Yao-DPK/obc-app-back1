@@ -30,8 +30,11 @@ export class UserController {
     return this.userRepository.getUsers();
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Super_Admin)
   @Get(':userId')
   async getProfile(@Param('userId') userId: string) {
+    console.log(`Getting User ${userId}`);
     return this.userService.getProfile(parseInt(userId, 10));
   }
 

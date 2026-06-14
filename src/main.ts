@@ -9,15 +9,16 @@ async function createApp() {
   const expressApp = express();
   const app = await NestFactory.create(
     AppModule,
-    new ExpressAdapter(expressApp),
+    new ExpressAdapter(expressApp),{
+      rawBody: true,
+    }
+
   );
 
 
   const allowedOrigins: any = [];
   if (process.env.ALLOWED_ORIGINS){
     const ALLOWED_ORIGINS_LIST = process.env.ALLOWED_ORIGINS.split(',');
-    console.log("allowed Origins: ", process.env.ALLOWED_ORIGINS);
-    console.log("Register Code: ", process.env.REGISTER_SECRET);
     for (let idx=0; idx < ALLOWED_ORIGINS_LIST.length; idx++ ){
       const o = ALLOWED_ORIGINS_LIST[idx];
       allowedOrigins.push(o);

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db, payments, eq } from '../../database/db';
-import { TRPCError } from '@trpc/server';
+import { db, payments, eq, paymentIntents } from '../../database/db';
 
 @Injectable()
 export class PaymentService {
@@ -39,7 +38,27 @@ export class PaymentService {
       })
       .where(eq(payments.id, declarationId))
       .returning();
-    if (!updated) throw new TRPCError({ code: 'NOT_FOUND' });
+    if (!updated) throw new Error('NOT_FOUND');
     return updated;
+  }
+
+  async createFromIntent(intentId: number, transactionReference: string) {
+    // Récupérer l'intention
+    const [intent] = await db.select().from(paymentIntents).where(eq(paymentIntents.id, intentId));
+    if (!intent) throw new Error('Intent not found');
+
+    // Insérer le paiement final
+    const [payment] = await db.insert(payments).values({
+      userId: intent.userId,
+      amount: intent.totalAmount,
+      method: intent.paymentMethod,
+      transactionReference,
+      reason: `Payment for event ${intent.eventId}`,
+      playerIds: intent.playerIds,
+      status: 'verified',
+      verifiedAt: new Date(),
+      intentId: intent.id,
+    }).returning();
+    return payment;
   }
 }

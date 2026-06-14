@@ -33,15 +33,7 @@ export const users = pgTable('users', {
   emergencyContactPhone: varchar('emergency_contact_phone', { length: 20 }),
 
   // Statuts d'inscription
-  registrationStatus: varchar('registration_status', { length: 20 })
-    .$type<
-      | 'pre_inscrit'
-      | 'inscrit'
-      | 'rejeté'
-      | 'suspendu'
-      | 'parent_invité'
-      | 'parent_inscrit'
-    >()
+  registrationStatus: varchar('registration_status', { length: 30 })
     .default('pre_inscrit')
     .notNull(),
   registrationStep: varchar('registration_step', { length: 50 }).default(
@@ -63,7 +55,7 @@ export const users = pgTable('users', {
     acceptedTerms: boolean;
     signatureUrl: string;
   }>(),
-
+  
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

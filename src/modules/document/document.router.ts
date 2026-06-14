@@ -5,7 +5,7 @@ import { DocumentService } from './document.service';
 import {
   CreateDocumentSchema,
   DocumentSchema,
-  FindByUserSchema,
+  RequestDocumentSchema,
 } from './document.dto';
 
 @Router({ alias: 'document' })
@@ -23,10 +23,10 @@ export class DocumentRouter {
 
   // Query pour récupérer par utilisateur
   @Query({
-    input: FindByUserSchema,
+    input: RequestDocumentSchema,
     output: z.array(DocumentSchema),
   })
-  async findByUser(@Input() input: z.infer<typeof FindByUserSchema>) {
+  async findByUser(@Input() input: z.infer<typeof RequestDocumentSchema>) {
     return this.documentsService.findByUser(input.userId);
   }
 }
