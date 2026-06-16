@@ -1,4 +1,4 @@
-import { UserInsert, UserSelect } from '@/database/schema';
+import { UserInsert, UserSelect } from 'tabase/schema';
 import { Request } from 'express';
 
 export interface RequestWithUser extends Request {

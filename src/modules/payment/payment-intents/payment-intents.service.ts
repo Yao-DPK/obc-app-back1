@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { addHours } from 'date-fns';
-import { paymentEvents, paymentIntents } from '@/database/schema';
+import { paymentEvents, paymentIntents } from '../../../database/schema';
 import { db, eq } from '../../../database/db';
 import { CreateIntentDto } from '../dto/payment.dto';
 
