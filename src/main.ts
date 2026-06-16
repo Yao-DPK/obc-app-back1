@@ -20,9 +20,9 @@ async function createApp() {
   
   
   app.use((req, res, next) => {
-    console.log(`📥 Incoming ${req.method} ${req.url} from ${req.headers.origin}`);
-    next();
-  });
+  console.log(`📥 Incoming ${req.method} ${req.url} from ${req.headers.origin}`);
+  next();
+});
 
   const allowedOrigins: any = ['*'];
   if (process.env.ALLOWED_ORIGINS){
@@ -41,7 +41,7 @@ async function createApp() {
     );
   }
 
-  /* app.use(
+  app.use(
     cors({
       origin: (origin, callback) => {
         if (
@@ -60,22 +60,6 @@ async function createApp() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
     }),
-  ); */
-
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        if (!origin || origin === 'null') {
-          // Allow requests with no origin (e.g., mobile apps, server-to-server)
-          return callback(null, true);
-        }
-        // Allow all origins for now
-        return callback(null, true);
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
-    })
   );
 
   app.use(cookieParser(process.env.COOKIE_SECRET));
@@ -83,8 +67,8 @@ async function createApp() {
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3031;
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${port}`);
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
   });
 
   await app.init();
