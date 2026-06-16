@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db } from '@/database/db';
+import { db } from '../../../database/db';
 import { eq } from 'drizzle-orm';
 import { paymentEvents } from '@/database/schema';
 import { CreatePaymentEventDto, UpdatePaymentEventDto } from '../dto/payment.dto';
