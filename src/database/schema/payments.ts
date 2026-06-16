@@ -10,7 +10,7 @@ import {
   date,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
-import { KayDevMetadata } from '@/types/payment.types';
+import { KayDevMetadata } from '../../types/payment.types';
 
 /* Stocke les paiements réalisés et en cours*/
 export const payments = pgTable('payments', {

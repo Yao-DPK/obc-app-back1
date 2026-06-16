@@ -2,7 +2,7 @@ import { Controller, Post, Body, Get, Param, UseGuards, Req } from '@nestjs/comm
 import { PaymentIntentsService } from './payment-intents.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { CreateIntentDto } from '../dto/payment.dto';
-import type { RequestWithUser } from '@/modules/auth/interfaces/request-with-user.interface';
+import type { RequestWithUser } from '../../../modules/auth/interfaces/request-with-user.interface';
 
 @Controller('payment-intents')
 @UseGuards(AuthGuard('jwt'))

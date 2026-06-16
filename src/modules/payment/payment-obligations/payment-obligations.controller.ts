@@ -1,6 +1,6 @@
-import { JwtAuthGuard } from '@/modules/auth/jwt-auth.guard';
-import { Roles } from '@/modules/common/decorators/roles.decorator';
-import { RolesGuard } from '@/modules/common/guards/roles.guard';
+import { JwtAuthGuard } from '../../../modules/auth/jwt-auth.guard';
+import { Roles } from '../../../modules/common/decorators/roles.decorator';
+import { RolesGuard } from '../../../modules/common/guards/roles.guard';
 import {
   Controller,
   Get,
@@ -18,7 +18,7 @@ import {
 import { z } from 'zod';
 import { CreatePaymentObligationSchema, UpdatePaymentObligationSchema } from './payment-obligation.dto';
 import { PaymentObligationService } from './payment-obligations.service';
-import { Role } from '@/modules/common/enums/role.enum';
+import { Role } from '../../../modules/common/enums/role.enum';
 
 @Controller('payment-obligations')
 @UseGuards(JwtAuthGuard, RolesGuard)

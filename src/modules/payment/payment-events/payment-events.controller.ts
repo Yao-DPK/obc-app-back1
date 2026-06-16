@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { PaymentEventsService } from './payment-events.service';
-import { RolesGuard } from '@/modules/common/guards/roles.guard';
-import { Roles } from '@/modules/common/decorators/roles.decorator';
-import { Role } from '@/modules/common/enums/role.enum';
+import { RolesGuard } from '../../../modules/common/guards/roles.guard';
+import { Roles } from '../../../modules/common/decorators/roles.decorator';
+import { Role } from '../../../modules/common/enums/role.enum';
 import type { CreatePaymentEventDto, UpdatePaymentEventDto } from '../dto/payment.dto';
 
 @Controller('admin/payment-events')
