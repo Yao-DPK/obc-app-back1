@@ -30,6 +30,14 @@ export class UserController {
     return this.userRepository.getUsers();
   }
 
+  @Get('/players')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getPlayers() {
+    console.log('Fetching Players');
+    return this.userRepository.getPlayers();
+  }
+
   @UseGuards(RolesGuard)
   @Roles(Role.Admin, Role.Super_Admin)
   @Get(':userId')

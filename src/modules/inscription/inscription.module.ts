@@ -6,6 +6,8 @@ import { GuardianRelationshipsRepository } from '../guardian/guardian.repository
 import { GoogleDriveService } from '../google-drive/google-drive.service';
 import { DocumentService } from '../document/document.service';
 import { DocumentRepository } from '../document/document.repository';
+import { PaymentObligationService } from '../payment/payment-obligations/payment-obligations.service';
+import { PaymentObligationRepository } from '../payment/payment-obligations/payment-obligation.repository';
 
 @Module({
   controllers: [InscriptionController],
@@ -16,6 +18,8 @@ import { DocumentRepository } from '../document/document.repository';
     GoogleDriveService,
     DocumentService,
     DocumentRepository,
+    PaymentObligationService, 
+    PaymentObligationRepository
   ],
   exports: [],
 })

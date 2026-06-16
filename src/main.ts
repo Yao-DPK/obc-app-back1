@@ -4,6 +4,9 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import { db } from './database/db';
+import fs from 'fs';
+
 
 async function createApp() {
   const expressApp = express();
@@ -14,7 +17,8 @@ async function createApp() {
     }
 
   );
-
+  
+  
 
   const allowedOrigins: any = [];
   if (process.env.ALLOWED_ORIGINS){
@@ -65,3 +69,5 @@ async function createApp() {
   return expressApp;
 }
 createApp();
+
+

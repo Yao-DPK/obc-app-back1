@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { FullRegistrationSchema } from './dto/player-registration.dto';
 import { GuardianRelationshipsRepository } from '../guardian/guardian.repository';
 import { DocumentService } from '../document/document.service';
+import { PaymentObligationService } from '../payment/payment-obligations/payment-obligations.service';
 
 
 
@@ -16,6 +17,7 @@ export class InscriptionService {
     private userRepository: UserRepository,
     private guardianRelationshipsRepo: GuardianRelationshipsRepository,
     private documentService: DocumentService,
+    private paymentObligationService: PaymentObligationService
   ) {}
 
   async upload (userId: number,
@@ -141,6 +143,34 @@ export class InscriptionService {
     // 8. Enregistrement des documents de l'utilisateur
     let filesUploaded: Promise<any[]> = this.documentService.userFilesupload(joueur.id, inscriptionFiles);
 
+    // 9. Définitions des paiements à effectuer
+
+    const now = new Date();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const endMonthString = endOfMonth.toISOString().split('T')[0];
+    const currentMonthName = now.toLocaleString('default', {month: 'long'});
+
+    this.paymentObligationService.create({
+      playerId: joueur.id,
+      amount: 15000,
+      dueDate: endMonthString,
+      description: `Mensualité du mois de ${currentMonthName}`,
+      status : 'pending'
+    })
+
+    this.paymentObligationService.create({
+      playerId: joueur.id,
+      amount: 50000,
+      dueDate: endMonthString,
+      description: `Inscription annuelle`,
+      status : 'pending'
+    })
+
+
     return { joueur, guardiansCreated, filesUploaded };
+  }
+
+  async validateRegistration(userId: number){
+    this.userRepository.update(userId, {registrationStatus: 'inscrit'});
   }
 }

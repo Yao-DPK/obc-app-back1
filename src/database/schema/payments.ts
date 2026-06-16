@@ -27,6 +27,8 @@ export const payments = pgTable('payments', {
   intentId: integer('intent_id').references(() => paymentIntents.id).unique(),
   status: varchar('status', { length: 20 }).default('pending').notNull(), // pending, verified, rejected
   transaction_metadata: jsonb('transaction_metadata').$type<KayDevMetadata>(),
+  obligationId: integer('obligation_id')
+    .references(() => paymentObligations.id),
   declaredAt: timestamp('declared_at').defaultNow().notNull(),
   verifiedBy: integer('verified_by').references(() => users.id),
   verifiedAt: timestamp('verified_at'),
@@ -71,7 +73,7 @@ export const paymentObligations = pgTable('payment_obligations', {
   id: serial('id').primaryKey(),
   playerId: integer('player_id').references(() => users.id), // optionnel : joueur concerné
   amount: decimal('amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
-  dueDate: date('due_date').notNull(),
+  dueDate: date('due_date'),
   description: varchar('description', { length: 255 }).notNull(), // "Inscription annuelle 2025", "Mensualité juin"
   status: varchar('status', { length: 20 }).default('pending').notNull(), // pending, paid, overdue, cancelled
   createdAt: timestamp('created_at').defaultNow().notNull(),

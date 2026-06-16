@@ -1,4 +1,4 @@
-import { Controller, Post, Req } from '@nestjs/common';
+import { Controller, Param, Patch, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { InscriptionService } from './inscription.service';
 import { FullRegistrationSchema } from './dto/player-registration.dto';
@@ -73,4 +73,10 @@ export class InscriptionController {
       otherFiles,
     );
   }
+
+  @Public()
+  @Patch('validate/:userId')
+  async validate(@Req() req: Request, @Param('userId') userId: string) {
+    this.inscriptionService.validateRegistration(parseInt(userId));
+  };
 }

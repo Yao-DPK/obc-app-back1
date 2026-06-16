@@ -22,6 +22,11 @@ export class UserRepository {
     return found_users;
   }
 
+  async getPlayers(): Promise<UserSelect[]> {
+    const found_players = await db.select().from(users).where(eq(users.role, 'player'));
+    return found_players;
+  }
+
   async findById(id: number): Promise<UserSelect | null> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || null;

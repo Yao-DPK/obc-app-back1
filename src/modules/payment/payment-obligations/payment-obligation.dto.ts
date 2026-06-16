@@ -4,9 +4,9 @@ export const PaymentObligationSchema = z.object({
   id: z.number(),
   playerId: z.number().nullable(),
   amount: z.number().positive(),
-  dueDate: z.string().date(),
+  dueDate: z.iso.date().optional(),
   description: z.string().min(1),
-  status: z.enum(['pending', 'paid', 'overdue', 'cancelled']),
+  status: z.enum(['pending', 'paid', 'overdue', 'cancelled', 'ongoing']),
   createdAt: z.date(),
 });
 
@@ -15,7 +15,7 @@ export const CreatePaymentObligationSchema = PaymentObligationSchema.omit({
   status: true,
   createdAt: true,
 }).extend({
-  status: z.enum(['pending', 'paid', 'overdue', 'cancelled']).default('pending'),
+  status: z.enum(['pending', 'paid', 'overdue', 'cancelled', 'ongoing']).default('pending'),
 });
 
 export const UpdatePaymentObligationSchema = CreatePaymentObligationSchema.partial();
