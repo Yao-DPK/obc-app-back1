@@ -35,7 +35,22 @@ export class UserController {
   @Roles(Role.Admin, Role.Super_Admin)
   async getPlayers() {
     console.log('Fetching Players');
-    return this.userRepository.getPlayers();
+    return this.userRepository.getUsersByRoles('player');
+  }
+
+  @Get('/parents')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getParents() {
+    console.log('Fetching Players');
+    return this.userRepository.getUsersByRoles('parent');
+  }
+
+  @Get('/admins')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Super_Admin)
+  async getAdmins() {
+    return this.userRepository.getUsersByRoles('admin');
   }
 
   @UseGuards(RolesGuard)
