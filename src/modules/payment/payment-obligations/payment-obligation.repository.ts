@@ -1,4 +1,4 @@
-import { db, ObligationInsert, paymentObligations } from '@/database/db';
+import { db, ObligationInsert, paymentObligations } from '../../../database/db';
 import { eq, and } from 'drizzle-orm';
 import { CreatePaymentObligationDto } from './payment-obligation.dto';
 
