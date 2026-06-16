@@ -24,7 +24,7 @@ async function createApp() {
   next();
 });
 
-  const allowedOrigins: any = ['*'];
+  const allowedOrigins: any = [];
   if (process.env.ALLOWED_ORIGINS){
     const ALLOWED_ORIGINS_LIST = process.env.ALLOWED_ORIGINS.split(',');
     for (let idx=0; idx < ALLOWED_ORIGINS_LIST.length; idx++ ){
