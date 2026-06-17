@@ -39,7 +39,7 @@ async function createApp() {
     );
   }
 
-  /* app.use(
+  app.use(
     cors({
       origin: (origin, callback) => {
         if (
@@ -58,16 +58,7 @@ async function createApp() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
     }),
-  ); */
-
-  app.use(
-  cors({
-    origin: (origin, callback) => callback(null, true),
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
-  })
-);
+  );
 
   app.use(cookieParser(process.env.COOKIE_SECRET));
 
