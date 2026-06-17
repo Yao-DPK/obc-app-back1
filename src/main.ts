@@ -32,8 +32,6 @@ async function createApp() {
       allowedOrigins.push(o);
     }
   }
-  console.log(`Test`);
-  console.log(`Allowed Origins: ${allowedOrigins}`);
 
   if (process.env.FRONTEND_PLATFORM === 'VERCEL') {
     allowedOrigins.push(
