@@ -8,58 +8,85 @@ import {
   HttpStatus,
   NotFoundException,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateProfileSchema, ChangePasswordSchema } from './dto/user.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { UserRepository } from './user.repository';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
+import { GetUser } from '../common/decorators/get-user.decorator';
+import { AdminOnly } from '../common/decorators/admin-only.decorator';
+import { UserRepository } from './user.repository';
 
 @Controller('users')
+@UseGuards(RolesGuard)
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private userRepository: UserRepository,
   ) {}
 
+  // ========== ADMIN / SUPER_ADMIN ==========
+
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles(Role.Admin, Role.Super_Admin)
+  @AdminOnly()
   async getUsers() {
     return this.userRepository.getUsers();
   }
 
-  @Get('/players')
-  @UseGuards(RolesGuard)
-  @Roles(Role.Admin, Role.Super_Admin)
-  async getPlayers() {
-    console.log('Fetching Players');
-    return this.userRepository.getUsersByRoles('player');
-  }
-
-  @Get('/parents')
-  @UseGuards(RolesGuard)
-  @Roles(Role.Admin, Role.Super_Admin)
-  async getParents() {
-    console.log('Fetching Players');
-    return this.userRepository.getUsersByRoles('parent');
-  }
-
-  @Get('/admins')
-  @UseGuards(RolesGuard)
+  @Get(':role')
   @Roles(Role.Super_Admin)
-  async getAdmins() {
-    return this.userRepository.getUsersByRoles('admin');
+  async getUsersByRole(@Param('role') role: 'player' | 'parent' | 'admin') {
+    if (!['player', 'parent', 'admin'].includes(role)) {
+      throw new BadRequestException('Rôle invalide');
+    }
+    return this.userRepository.getUsersByRoles(role);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.Admin, Role.Super_Admin)
-  @Get(':userId')
-  async getProfile(@Param('userId') userId: string) {
-    console.log(`Getting User ${userId}`);
-    return this.userService.getProfile(parseInt(userId, 10));
+  @Patch(':userId/validate-registration')
+  @AdminOnly()
+  async validateRegistration(@Param('userId') userId: string) {
+    const id = parseInt(userId, 10);
+    const user = await this.userRepository.findById(id);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    await this.userRepository.update(id, { registrationStatus: 'inscrit' });
+    return { message: 'Inscription validée' };
   }
+
+  @Patch(':userId/reject-registration')
+  @AdminOnly()
+  async rejectRegistration(@Param('userId') userId: string) {
+    const id = parseInt(userId, 10);
+    await this.userRepository.update(id, { registrationStatus: 'rejeté' });
+    return { message: 'Inscription rejetée' };
+  }
+
+  // ========== AUTHENTIFIED USER (profil) ==========
+
+  @Get('me')
+  async getProfile(@GetUser() user: any) {
+    return this.userService.getUser(user.id);
+  }
+
+  @Get(':userId')
+  async getUser(
+    @GetUser() authUser: any,
+    @Param('userId') userId: string,
+  ) {
+    const targetId = parseInt(userId, 10);
+    const isAdmin = ['admin', 'super_admin'].includes(authUser.role);
+
+    // Seul l'admin ou l'utilisateur lui-même peut voir le profil
+    if (!isAdmin && authUser.id !== targetId) {
+      // Tu peux lever une exception ou retourner une version restreinte
+      return this.userService.getUserRestricted(targetId);
+    }
+
+    return this.userService.getUser(targetId);
+  }
+
+  // ========== MISE À JOUR ==========
 
   @Patch(':userId')
   @HttpCode(HttpStatus.OK)
@@ -76,28 +103,5 @@ export class UserController {
       oldPassword,
       newPassword,
     );
-  }
-
-  @Patch(':userId/validate-registration')
-  @UseGuards(RolesGuard)
-  @Roles(Role.Admin, Role.Super_Admin)
-  async validateRegistration(@Param('userId') userId: string) {
-    const id = parseInt(userId);
-    const user = await this.userRepository.findById(id);
-    if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    // Mettre à jour le statut
-    await this.userRepository.update(id, { registrationStatus: 'inscrit' });
-    // Optionnel : envoyer un email de bienvenue
-    return { message: 'Inscription validée' };
-  }
-
-  @Patch(':userId/reject-registration')
-  @UseGuards(RolesGuard)
-  @Roles(Role.Admin, Role.Super_Admin)
-  async rejectRegistration(@Param('userId') userId: string) {
-    const id = parseInt(userId);
-    // Soit supprimer l'utilisateur, soit passer à 'rejeté'
-    await this.userRepository.update(id, { registrationStatus: 'rejeté' });
-    return { message: 'Inscription rejetée' };
   }
 }

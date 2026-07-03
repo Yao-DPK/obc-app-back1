@@ -10,7 +10,7 @@ export class GuardianService {
       .from(users)
       .where(eq(users.id, playerId));
     if (!player)
-      throw new TRPCError({ code: 'NOT_FOUND', message: 'Player not found' });
+      throw new Error('Player not found' );
     const [existing] = await db
       .select()
       .from(guardianRelationships)
@@ -21,7 +21,7 @@ export class GuardianService {
         ),
       );
     if (existing)
-      throw new TRPCError({ code: 'CONFLICT', message: 'Link already exists' });
+      throw new Error('Link already exists');
     const [link] = await db
       .insert(guardianRelationships)
       .values({
@@ -34,16 +34,23 @@ export class GuardianService {
   }
 
   async getGuardians(playerId: number) {
-    return db
+    const relationships = await db
       .select()
       .from(guardianRelationships)
       .where(eq(guardianRelationships.playerId, playerId));
+
+    const guardianIds = relationships.map((r) => r.guardianId);
+    return guardianIds;
   }
 
   async getPlayers(guardianId: number) {
-    return db
+    const relationships = await db
       .select()
       .from(guardianRelationships)
       .where(eq(guardianRelationships.guardianId, guardianId));
+
+    const playerIds = relationships.map((r) => r.playerId);
+    return playerIds;
   }
+
 }

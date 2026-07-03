@@ -4,8 +4,7 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
-import { db } from './database/db';
-import fs from 'fs';
+
 
 
 async function createApp() {

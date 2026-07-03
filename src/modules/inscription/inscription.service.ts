@@ -166,6 +166,10 @@ export class InscriptionService {
       status : 'pending'
     })
 
+    // 10. Envoie des mails de confirmations aux différents garants.
+    
+    
+
 
     return { joueur, guardiansCreated, filesUploaded };
   }

@@ -57,4 +57,31 @@ export class EmailService {
   `;
     await this.transporter.sendMail({ to, subject, html });
   }
+
+  async sendGardianConfirmationEmail(to: string, player_info: {"firstname": string, "lastname": string}, guardian_info: {"gender": string, "lastname": string}): Promise<void> {
+    const subject = 'Confirmation Garant';
+    const confirmation_link = "";
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px;">
+        <h2>Confirmation Garant</h2>
+        <p>Bonjour ${guardian_info.gender == "M" ? 'Mr' : "Mme"} ${guardian_info.lastname}; </p>
+        <p>Vous avez été désigné comme garant du joueur suivant lors de son inscription à OBC: </p>
+        <p> <strong style="font-size: 24px;"> ${player_info.firstname} ${player_info.lastname} </strong></p>
+        <p>Nous vous prions de bien vouloir confirmer ou infirmer cela en cliquant sur le lien ci dessous.</p>
+        <a href="${confirmation_link}">${confirmation_link}</a>
+
+        <small>Ce lien expirera dans 24h.</small>
+
+        <hr />
+        <small>Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.</small>
+      </div>
+    `;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('EMAIL_FROM'),
+      to,
+      subject,
+      html,
+    });
+  }
 }

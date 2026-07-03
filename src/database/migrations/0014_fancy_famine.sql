@@ -1,0 +1,1 @@
+ALTER TABLE "guardian_relationships" ADD COLUMN "status" boolean DEFAULT false;

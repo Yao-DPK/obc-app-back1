@@ -43,6 +43,7 @@ export class AuthController {
     return { message: 'Code de vérification envoyé par email' };
   }
 
+
   @Public()
   @Post('verify-email')
   async verifyEmail(@Body('email') email: string, @Body('code') code: string) {

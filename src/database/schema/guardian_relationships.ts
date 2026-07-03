@@ -3,6 +3,7 @@ import {
   integer,
   jsonb,
   timestamp,
+  boolean,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
@@ -25,8 +26,8 @@ export const guardianRelationships = pgTable('guardian_relationships', {
       canRegister?: boolean;
     }>()
     .default({ canPay: true, canRegister: false }),
+  status: boolean('status').default(false),
+  confirmationToken: varchar('confirmation_token', { length: 255 }),
+  tokenExpiresAt: timestamp('token_expires_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
-
-/* registrationStatus: varchar('registration_status', { length: 20 }).$type<'pre_inscrit' | 'inscrit' | 'actif' | 'suspendu' | 'parent_invité' | 'validé'>().default('pre_inscrit').notNull(),
-  registrationStep: varchar('registration_step', { length: 50 }).default('formulaire'), */
