@@ -12,7 +12,6 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { GuardianModule } from './modules/guardian/guardian.module';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuditMiddleware } from './modules/common/middleware/audit.middleware';
-import { GuardianController } from './modules/guardian/guardian.controller';
 import { EmailModule } from './modules/email/email.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { PaymentEventsService } from './modules/payment/payment-events/payment-events.service';
