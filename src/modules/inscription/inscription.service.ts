@@ -129,7 +129,7 @@ export class InscriptionService {
         await this.guardianRelationshipsRepo.create({
           guardianId: guardian.id,
           playerId: joueur.id,
-          relationship: g.relationship,
+          relationship: g.relationship as "Mère" | "Père" | "Tuteur" | undefined,
           permissions: { canPay: true, canRegister: false },
         });
         guardiansCreated.push(guardian);

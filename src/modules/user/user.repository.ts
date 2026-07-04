@@ -1,30 +1,14 @@
-// apps/api/src/modules/user/user.repository.ts
 import { Injectable } from '@nestjs/common';
-import { db, users, eq, and } from '../../database/db';
+import { db, users, eq, and, inArray } from '../../database/db';
 import { UserInsert, UserSelect } from '../../database/db';
-import { cp } from 'fs';
 
 @Injectable()
 export class UserRepository {
+  // ========== CRUD ==========
+
   async create(data: UserInsert): Promise<UserSelect> {
     const [user] = await db.insert(users).values(data).returning();
     return user;
-  }
-
-  async findByEmail(email: string): Promise<UserSelect | null> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    //console.log("Found User: ", user);
-    return user || null;
-  }
-
-  async getUsers(): Promise<UserSelect[]> {
-    const found_users = await db.select().from(users);
-    return found_users;
-  }
-
-  async getUsersByRoles(role: "parent" | "player" | "admin" | "super_admin"): Promise<UserSelect[]> {
-    const found_players = await db.select().from(users).where(eq(users.role, role));
-    return found_players;
   }
 
   async findById(id: number): Promise<UserSelect | null> {
@@ -32,10 +16,17 @@ export class UserRepository {
     return user || null;
   }
 
-  async update(
-    id: number,
-    data: Partial<UserInsert>,
-  ): Promise<UserSelect | null> {
+  async findByIds(ids: number[]): Promise<UserSelect[]> {
+    if (!ids || ids.length === 0) return [];
+    return await db.select().from(users).where(inArray(users.id, ids));
+  }
+
+  async findByEmail(email: string): Promise<UserSelect | null> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || null;
+  }
+
+  async update(id: number, data: Partial<UserInsert>): Promise<UserSelect | null> {
     const [updated] = await db
       .update(users)
       .set({ ...data, updatedAt: new Date() })
@@ -44,15 +35,30 @@ export class UserRepository {
     return updated || null;
   }
 
+  async delete(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  // ========== LISTES ==========
+
+  async findAll(): Promise<UserSelect[]> {
+    return await db.select().from(users);
+  }
+
+  async findByRole(role: 'player' | 'parent' | 'admin' | 'super_admin'): Promise<UserSelect[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+
   async findByStatus(
-    status:
-      | 'pre_inscrit'
-      | 'inscrit'
-      | 'rejeté'
-      | 'suspendu'
-      | 'parent_invité'
-      | 'parent_inscrit',
+    status: 'pre_inscrit' | 'inscrit' | 'rejeté' | 'suspendu' | 'parent_invité' | 'parent_inscrit',
   ): Promise<UserSelect[]> {
-    return db.select().from(users).where(eq(users.registrationStatus, status));
+    return await db.select().from(users).where(eq(users.registrationStatus, status));
+  }
+
+  // ========== UTILITAIRES ==========
+
+  async exists(id: number): Promise<boolean> {
+    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, id));
+    return !!user;
   }
 }

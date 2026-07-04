@@ -30,4 +30,8 @@ export const guardianRelationships = pgTable('guardian_relationships', {
   confirmationToken: varchar('confirmation_token', { length: 255 }),
   tokenExpiresAt: timestamp('token_expires_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export type GuardianRelationshipInsert = typeof guardianRelationships.$inferInsert;
+export type GuardianRelationshipSelect = typeof guardianRelationships.$inferSelect;

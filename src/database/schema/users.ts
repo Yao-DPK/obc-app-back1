@@ -27,6 +27,8 @@ export const users = pgTable('users', {
   address: text('address'),
   school: varchar('school', { length: 255 }),
   class: varchar('class', { length: 50 }),
+  photoUrl: varchar('photo_url', { length: 500 }),
+
 
   // Pour les joueurs autonomes mineurs
   emergencyContactName: varchar('emergency_contact_name', { length: 255 }),

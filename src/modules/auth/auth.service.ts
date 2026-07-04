@@ -138,7 +138,7 @@ export class AuthService {
       user.phone!,
     );
     return {
-      user: { id: user.id, email: user.email, role: user.role },
+      user: user,
       accessToken: newAccessToken,
     };
   }

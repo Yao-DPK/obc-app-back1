@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { GuardianRouter } from './guardian.router';
 import { GuardianService } from './guardian.service';
 import { GuardianController } from './guardian.controller';
+import { GuardianRelationshipsRepository } from './guardian.repository';
+import { UserRepository } from '../user/user.repository';
 
 @Module({
-  providers: [GuardianRouter, GuardianService],
-  exports: [GuardianRouter],
+  providers: [GuardianService, GuardianRelationshipsRepository, UserRepository],
+  exports: [],
   controllers: [GuardianController],
 })
 export class GuardianModule {}

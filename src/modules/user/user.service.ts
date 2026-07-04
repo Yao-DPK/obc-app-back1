@@ -1,40 +1,46 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { TRPCError } from '@trpc/server';
-import { users } from '../../database/schema';
-import { db, eq, and, not } from '../../database/db';
+import { UserRepository } from './user.repository';
+import { UserSelect } from '../../database/db';
 
 @Injectable()
 export class UserService {
+  constructor(private readonly userRepository: UserRepository) {}
 
-  
+  // ========== LECTURE ==========
 
-  async getUser(userId: number) {
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) throw new Error('NOT_FOUND');
+  async getUser(userId: number): Promise<Omit<UserSelect, 'passwordHash'>> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
     const { passwordHash, ...safeUser } = user;
     return safeUser;
   }
 
-  async getUserRestricted(userId: number) {
-    const [user] = await db
-  .select()
-  .from(users)
-  .where(
-    and(
-      eq(users.id, userId),
-      not(eq(users.role, 'admin')),
-      not(eq(users.role, 'super_admin'))
-    )
-  );
-    if (!user) throw new Error('NOT_FOUND');
+  async getUserRestricted(userId: number): Promise<Omit<UserSelect, 'passwordHash'>> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    // Restriction : ne pas exposer les admins/superadmins aux non-admin
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      throw new UnauthorizedException('Accès non autorisé');
+    }
+
     const { passwordHash, ...safeUser } = user;
     return safeUser;
   }
 
+  async getUsersByIds(ids: number[]): Promise<Omit<UserSelect, 'passwordHash'>[]> {
+    const users = await this.userRepository.findByIds(ids);
+    return users.map(({ passwordHash, ...safe }) => safe);
+  }
 
-  async updateProfile(userId: number, data: any) {
-    await db.update(users).set(data).where(eq(users.id, userId));
+  // ========== MISE À JOUR ==========
+
+  async updateProfile(userId: number, data: Partial<UserSelect>): Promise<{ success: true }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    await this.userRepository.update(userId, data);
     return { success: true };
   }
 
@@ -42,19 +48,35 @@ export class UserService {
     userId: number,
     oldPassword: string,
     newPassword: string,
-  ) {
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) throw new Error('NOT_FOUND' );
-    const valid = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!valid)
-      throw new Error(
-        'Invalid old password',
-      );
+  ): Promise<{ success: true }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    const isValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isValid) throw new UnauthorizedException('Mot de passe actuel incorrect');
+
     const newHash = await bcrypt.hash(newPassword, 10);
-    await db
-      .update(users)
-      .set({ passwordHash: newHash })
-      .where(eq(users.id, userId));
+    await this.userRepository.update(userId, { passwordHash: newHash });
+
     return { success: true };
+  }
+
+  // ========== STATUTS ==========
+
+  async updateRegistrationStatus(
+    userId: number,
+    status: 'inscrit' | 'rejeté',
+  ): Promise<{ success: true }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    await this.userRepository.update(userId, { registrationStatus: status });
+    return { success: true };
+  }
+
+  // ========== UTILITAIRES ==========
+
+  async exists(userId: number): Promise<boolean> {
+    return this.userRepository.exists(userId);
   }
 }

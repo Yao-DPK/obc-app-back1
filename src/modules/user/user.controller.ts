@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Param,
   Patch,
   Body,
@@ -17,6 +18,8 @@ import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { UserRepository } from './user.repository';
+import { Public } from '../common/decorators/public.decorator';
+
 
 @Controller('users')
 @UseGuards(RolesGuard)
@@ -31,16 +34,25 @@ export class UserController {
   @Get()
   @AdminOnly()
   async getUsers() {
-    return this.userRepository.getUsers();
+    return this.userRepository.findAll();
+  }
+
+  @Post('batch')
+  async getUsersByIds(@Body() { ids }: { ids: number[] }) {
+    if (!ids || !ids.length) throw new BadRequestException('IDs requis');
+    if (ids.length > 100) throw new BadRequestException('Trop d\'IDs (max 100)');
+    
+    return this.userRepository.findByIds(ids);
   }
 
   @Get(':role')
+  @UseGuards(RolesGuard)
   @Roles(Role.Super_Admin)
   async getUsersByRole(@Param('role') role: 'player' | 'parent' | 'admin') {
     if (!['player', 'parent', 'admin'].includes(role)) {
       throw new BadRequestException('Rôle invalide');
     }
-    return this.userRepository.getUsersByRoles(role);
+    return this.userRepository.findByRole(role);
   }
 
   @Patch(':userId/validate-registration')
@@ -64,12 +76,10 @@ export class UserController {
 
   // ========== AUTHENTIFIED USER (profil) ==========
 
-  @Get('me')
-  async getProfile(@GetUser() user: any) {
-    return this.userService.getUser(user.id);
-  }
 
   @Get(':userId')
+  
+  @Roles(Role.Parent, Role.Player, Role.Admin, Role.Super_Admin)
   async getUser(
     @GetUser() authUser: any,
     @Param('userId') userId: string,

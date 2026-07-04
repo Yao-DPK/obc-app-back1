@@ -25,6 +25,8 @@ import { EmailService } from '../email/email.service';
 import { UserRepository } from '../user/user.repository';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/resert-password.dto';
+import { UserService } from '../user/user.service';
+import { GetUser } from '../common/decorators/get-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -33,6 +35,7 @@ export class AuthController {
     private otpService: OtpService,
     private emailService: EmailService,
     private userRepository: UserRepository,
+    private readonly userService: UserService,
   ) {}
 
   @Public()
@@ -41,6 +44,11 @@ export class AuthController {
     if (!email) throw new BadRequestException('Email requis');
     await this.otpService.sendEmailOtp(email);
     return { message: 'Code de vérification envoyé par email' };
+  }
+
+  @Get('profile')
+  async getProfile(@GetUser() user: any) {
+    return this.userService.getUser(user.sub);
   }
 
 
@@ -95,10 +103,11 @@ export class AuthController {
     return this.authService.logout(userId, res);
   }
 
+/*   @Public()
   @Get('me')
   getProfile(@Request() req: ExpressRequest) {
     return req.user;
-  }
+  } */
 
   @Public()
   @Post('forgot-password')

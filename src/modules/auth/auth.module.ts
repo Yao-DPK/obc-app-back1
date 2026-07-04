@@ -11,6 +11,8 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.stategy';
 import { OtpModule } from '../otp/otp.module';
 import { EmailService } from '../email/email.service';
+import { UserService } from '../user/user.service';
+import { UserRepository } from '../user/user.repository';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { EmailService } from '../email/email.service';
   ],
   providers: [
     AuthService,
+    UserService,
+    UserRepository,
     JwtStrategy,
     {
       provide: APP_GUARD,
