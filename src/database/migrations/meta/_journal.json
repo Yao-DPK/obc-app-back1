@@ -120,6 +120,13 @@
       "when": 1783158570411,
       "tag": "0016_watery_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1783298860868,
+      "tag": "0017_fuzzy_toxin",
+      "breakpoints": true
     }
   ]
 }

@@ -1,39 +1,162 @@
+// src/modules/payment/payment.controller.ts
 import {
   Controller,
   Post,
-  Body,
   Get,
-  Param,
   Patch,
+  Param,
+  Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import {
-  CreatePaymentDeclarationSchema,
-  VerifyPaymentSchema,
-} from './dto/payment.dto';
+import type {
+  CreateIntentDto,
+  CreateObligationDto,
+  VerifyPaymentDto,
+} from './payment.dto';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
+import { GetUser } from '../common/decorators/get-user.decorator';
+import { AdminOnly } from '../common/decorators/admin-only.decorator';
 
 @Controller('payments')
+@UseGuards(RolesGuard)
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() input: any) {
-    const { userId, ...data } = input;
-    return this.paymentService.create(userId, data);
+  // ============================================================
+  // ÉVÉNEMENTS (public / parent)
+  // ============================================================
+
+  @Get('events')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getActiveEvents() {
+    return this.paymentService.getActiveEvents();
   }
 
-  @Get('user/:userId')
-  async listByUser(@Param('userId') userId: string) {
-    return this.paymentService.listByUser(parseInt(userId, 10));
+  @Get('events/:id')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getEventById(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentService.getEventById(id);
   }
+
+  // ============================================================
+  // OBLIGATIONS (parent)
+  // ============================================================
+
+  @Post('obligations')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  @HttpCode(HttpStatus.CREATED)
+  async createObligation(
+    @GetUser('id') userId: number,
+    @Body() dto: CreateObligationDto,
+  ) {
+    return this.paymentService.createObligation(userId, dto);
+  }
+
+  @Get('obligations')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getMyObligations(@GetUser('id') userId: number) {
+    return this.paymentService.getObligationsByUser(userId);
+  }
+
+  @Get('obligations/:id')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getObligationWithIntents(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentService.getObligationWithIntents(id);
+  }
+
+  @Patch('obligations/:id/cancel')
+  @Roles(Role.Parent)
+  @HttpCode(HttpStatus.OK)
+  async cancelObligation(
+    @GetUser('id') userId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.paymentService.cancelObligation(id, userId);
+  }
+
+  // ============================================================
+  // INTENTIONS DE PAIEMENT (parent)
+  // ============================================================
+
+  @Post('intents')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  @HttpCode(HttpStatus.CREATED)
+  async createIntent(
+    @GetUser('id') userId: number,
+    @Body() dto: CreateIntentDto,
+  ) {
+    return this.paymentService.createIntent(userId, dto);
+  }
+
+  @Get('intents')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getMyIntents(@GetUser('id') userId: number) {
+    return this.paymentService.getIntentsByUser(userId);
+  }
+
+  @Get('intents/:id')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getIntentById(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentService.getIntentById(id);
+  }
+
+  @Get('intents/reference/:ref')
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getIntentByReference(@Param('ref') ref: string) {
+    return this.paymentService.getTransactionByReference(ref);
+  }
+
+  // ============================================================
+  // VÉRIFICATION (admin)
+  // ============================================================
 
   @Patch('verify')
+  @AdminOnly()
   @HttpCode(HttpStatus.OK)
-  async verify(@Body() input: any) {
-    const { declarationId, status, adminId } = input;
-    return this.paymentService.verify(adminId || 1, declarationId, status);
+  async verifyPayment(
+    @GetUser('id') adminId: number,
+    @Body() dto: VerifyPaymentDto,
+  ) {
+    return this.paymentService.verifyPayment(adminId, dto);
+  }
+
+  // ============================================================
+  // RÉSUMÉ (parent)
+  // ============================================================
+
+  @Get('summary')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getMySummary(@GetUser('id') userId: number) {
+    return this.paymentService.getUserPaymentSummary(userId);
+  }
+
+  // ============================================================
+  // ADMIN / SUPER_ADMIN : VUE GLOBALE
+  // ============================================================
+
+  @Get('admin/obligations')
+  @AdminOnly()
+  async getAllObligations() {
+    // Méthode à ajouter dans le service (non inclus, à implémenter)
+    return this.paymentService.getAllObligations();
+  }
+
+  @Get('admin/intents')
+  @AdminOnly()
+  async getAllIntents() {
+    // Méthode à ajouter dans le service (non inclus, à implémenter)
+    return this.paymentService.getAllIntents();
+  }
+
+  @Get('admin/summary/:userId')
+  @AdminOnly()
+  async getUserSummary(@Param('userId', ParseIntPipe) userId: number) {
+    return this.paymentService.getUserPaymentSummary(userId);
   }
 }

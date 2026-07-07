@@ -1,26 +1,18 @@
 import { Module } from '@nestjs/common';
 import { InscriptionService } from './inscription.service';
 import { InscriptionController } from './inscription.controller';
-import { UserRepository } from '../user/user.repository';
-import { GuardianRelationshipsRepository } from '../guardian/guardian.repository';
-import { GoogleDriveService } from '../google-drive/google-drive.service';
 import { DocumentService } from '../document/document.service';
 import { DocumentRepository } from '../document/document.repository';
-import { PaymentObligationService } from '../payment/payment-obligations/payment-obligations.service';
-import { PaymentObligationRepository } from '../payment/payment-obligations/payment-obligation.repository';
+import { PaymentModule } from '../payment/payment.module';
+import { UserModule } from '../user/user.module';
+import { GuardianModule } from '../guardian/guardian.module';
+import { DocumentModule } from '../document/document.module';
+import { GoogleDriveModule } from '../google-drive/google-drive.module';
 
 @Module({
   controllers: [InscriptionController],
-  providers: [
-    InscriptionService,
-    UserRepository,
-    GuardianRelationshipsRepository,
-    GoogleDriveService,
-    DocumentService,
-    DocumentRepository,
-    PaymentObligationService, 
-    PaymentObligationRepository
-  ],
+  imports: [PaymentModule, UserModule, GuardianModule, DocumentModule, GoogleDriveModule],
+  providers: [InscriptionService],
   exports: [],
 })
 export class InscriptionModule {}

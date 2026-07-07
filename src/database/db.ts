@@ -22,6 +22,8 @@ export {
   lt,
   gt,
   lte,
+  desc,
+  asc,
   gte,
   ilike,
   inArray,

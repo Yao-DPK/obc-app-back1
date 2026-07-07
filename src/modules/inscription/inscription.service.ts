@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { FullRegistrationSchema } from './dto/player-registration.dto';
 import { GuardianRelationshipsRepository } from '../guardian/guardian.repository';
 import { DocumentService } from '../document/document.service';
-import { PaymentObligationService } from '../payment/payment-obligations/payment-obligations.service';
+import { PaymentService } from '../payment/payment.service';
 
 
 
@@ -17,7 +17,7 @@ export class InscriptionService {
     private userRepository: UserRepository,
     private guardianRelationshipsRepo: GuardianRelationshipsRepository,
     private documentService: DocumentService,
-    private paymentObligationService: PaymentObligationService
+    //private paymentService: PaymentService
   ) {}
 
   async upload (userId: number,
@@ -150,7 +150,8 @@ export class InscriptionService {
     const endMonthString = endOfMonth.toISOString().split('T')[0];
     const currentMonthName = now.toLocaleString('default', {month: 'long'});
 
-    this.paymentObligationService.create({
+
+    /* this.paymentService.createObligation({
       playerId: joueur.id,
       amount: 15000,
       dueDate: endMonthString,
@@ -158,13 +159,13 @@ export class InscriptionService {
       status : 'pending'
     })
 
-    this.paymentObligationService.create({
+    this.paymentService.createObligation({
       playerId: joueur.id,
       amount: 50000,
       dueDate: endMonthString,
       description: `Inscription annuelle`,
       status : 'pending'
-    })
+    }) */
 
     // 10. Envoie des mails de confirmations aux différents garants.
     

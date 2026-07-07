@@ -18,11 +18,13 @@ import { randomBytes } from 'crypto';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userRepository: UserRepository,
+    private userService: UserService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
@@ -128,7 +130,7 @@ export class AuthService {
     if (!stored || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
-    const user = await this.userRepository.findById(stored.userId);
+    const user = await this.userService.getUser(stored.userId);
     if (!user) throw new UnauthorizedException('User not found');
 
     const newAccessToken = this.generateAccessToken(

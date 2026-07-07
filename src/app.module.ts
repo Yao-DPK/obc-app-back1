@@ -14,7 +14,6 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuditMiddleware } from './modules/common/middleware/audit.middleware';
 import { EmailModule } from './modules/email/email.module';
 import { OtpModule } from './modules/otp/otp.module';
-import { PaymentEventsService } from './modules/payment/payment-events/payment-events.service';
 
 const isProduction = process.env.NODE_ENV === 'prod';
 
@@ -35,7 +34,7 @@ const isProduction = process.env.NODE_ENV === 'prod';
     OtpModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PaymentEventsService],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
