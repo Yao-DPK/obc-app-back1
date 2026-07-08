@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   date,
+  boolean,
 } from 'drizzle-orm/pg-core';
 
 // ====== users (core) ======
@@ -29,7 +30,9 @@ export const users = pgTable('users', {
     .default({ email: true, sms: false, push: true }),
   registrationStatus: varchar('registration_status', { length: 30 })
     .default('pre_inscrit')
-    .notNull(), // reste pertinent pour tous
+    .notNull(), // reste pertinent pour tous,
+
+  isVerified: boolean('isVerified').default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -46,6 +49,7 @@ export const players = pgTable('players', {
     .notNull(),
   birthDate: date('birth_date'),
   school: varchar('school', { length: 255 }),
+  class: varchar('class', { length: 50 }),
   emergencyContactName: varchar('emergency_contact_name', { length: 255 }),
   emergencyContactPhone: varchar('emergency_contact_phone', { length: 20 }),
   attestationData: jsonb('attestation_data').$type<{

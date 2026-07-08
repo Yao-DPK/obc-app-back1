@@ -1,1 +1,0 @@
-ALTER TABLE "payment_obligations" ADD COLUMN "amount_paid" numeric(10, 2) DEFAULT 0;

@@ -1,1 +1,0 @@
-ALTER TABLE "users" RENAME COLUMN "public_url" TO "photo_url";

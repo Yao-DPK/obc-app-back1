@@ -67,8 +67,8 @@ export class InscriptionService {
       throw new ConflictException('Cet joueur existe déjà');
     }
 
-    // 2. Hasher le mot de passe
-    const hashedPassword = await bcrypt.hash(step1.password, 10);
+   /*  // 2. Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(step1.password, 10); */
 
     // 3. Upload de la signature
     const fileUpload = await this.documentService.fileUpload(signature);
@@ -76,7 +76,7 @@ export class InscriptionService {
     // 4. Créer l'utilisateur (table users) – seulement les champs communs
     const userData: any = {
       email: step1.email,
-      passwordHash: hashedPassword,
+      //passwordHash: hashedPassword,
       role: 'player',
       registrationStatus: 'pre_inscrit',
       firstName: step1.firstName,
@@ -121,6 +121,7 @@ export class InscriptionService {
           passwordHash: hashedTemp,
           role: 'parent',
           registrationStatus: 'parent_invité',
+          gender: g.relationship == 'Mère' ? "F" : "M",
           firstName: g.firstName,
           lastName: g.lastName,
           phone: g.phone,

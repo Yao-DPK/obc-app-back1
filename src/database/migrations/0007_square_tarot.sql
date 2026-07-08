@@ -1,1 +1,0 @@
-ALTER TABLE "payments" RENAME COLUMN "phone" TO "transaction_phone_number";
