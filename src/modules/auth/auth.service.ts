@@ -108,6 +108,8 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+    const { passwordHash, ...safeUser } = user;
+
 
     const accessToken = this.generateAccessToken(
       user.id,
@@ -116,8 +118,10 @@ export class AuthService {
       user.phone!,
     );
     await this.generateRefreshToken(user.id, res);
+
+    console.log(`Returned Logged user: ${JSON.stringify(safeUser)}`);
     return {
-      user: { id: user.id, email: user.email, role: user.role },
+      user: safeUser,
       accessToken,
     };
   }

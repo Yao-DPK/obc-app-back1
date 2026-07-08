@@ -1,13 +1,12 @@
 // apps/api/src/modules/inscription/inscription.service.ts
 import { Injectable, ConflictException } from '@nestjs/common';
 import { UserRepository } from '../user/user.repository';
-import { GoogleDriveService } from '../google-drive/google-drive.service';
 import * as bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { FullRegistrationSchema } from './dto/player-registration.dto';
 import { GuardianRelationshipsRepository } from '../guardian/guardian.repository';
 import { DocumentService } from '../document/document.service';
-import { PaymentService } from '../payment/payment.service';
+import { PlayerRepository } from '../user/player.repository';
 
 
 
@@ -17,7 +16,7 @@ export class InscriptionService {
     private userRepository: UserRepository,
     private guardianRelationshipsRepo: GuardianRelationshipsRepository,
     private documentService: DocumentService,
-    //private paymentService: PaymentService
+    private playerRepository: PlayerRepository
   ) {}
 
   async upload (userId: number,
@@ -61,87 +60,85 @@ export class InscriptionService {
     const { step1, step2 } = data;
 
     // 1. Vérifier email du joueur
-    const existingJoueur = await this.userRepository.findByEmail(step1.email);
-    if (existingJoueur) {
-      throw new ConflictException('Cet email est déjà utilisé');
+    const existingPlayer = await this.playerRepository.findByBirthDay(step1.birthDate);
+    const existingUser = await this.userRepository.findById(existingPlayer?.userId!);
+    const samePlayer = existingUser?.firstName == step1.firstName && existingUser?.lastName == step1.lastName && existingUser?.gender == step1.gender
+    if (samePlayer) {
+      throw new ConflictException('Cet joueur existe déjà');
     }
 
     // 2. Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(step1.password, 10);
 
     // 3. Upload de la signature
-
     const fileUpload = await this.documentService.fileUpload(signature);
-    /* const fileBuffer = await signature.buffer;
-    const originalName = signature.filename;
-    const mimeType = signature.mimetype;
-    const signatureUpload = await this.googleDriveService.uploadFile(fileBuffer, originalName, mimeType);
-    const signatureUrl = signatureUpload.publicUrl; // ajustez selon votre service
- */
-    // 4. Créer le joueur
-    const joueurData: any = {
+    
+    // 4. Créer l'utilisateur (table users) – seulement les champs communs
+    const userData: any = {
       email: step1.email,
       passwordHash: hashedPassword,
       role: 'player',
       registrationStatus: 'pre_inscrit',
-      registrationStep: 'attestation_signee', // après soumission de l'attestation
       firstName: step1.firstName,
       lastName: step1.lastName,
-      birthDate: step1.birthDate,
       gender: step1.gender,
       phone: step1.phone,
       address: step1.address,
+      // photoUrl ? (si dispo)
+    };
+    const joueur = await this.userRepository.create(userData);
+
+    // 5. Créer l'entrée joueur (table players) – champs spécifiques
+    const playerData: any = {
+      userId: joueur.id,
+      birthDate: step1.birthDate,
       school: step1.school,
       class: step1.class,
       emergencyContactName: step1.emergencyContactName,
       emergencyContactPhone: step1.emergencyContactPhone,
+      registrationStep: 'attestation_signee', // après soumission de l'attestation
       attestationData: {
         signatoryType: step2.signatoryType,
         selectedGuardianIndex: step2.selectedGuardianIndex,
         signatoryFullName: step2.signatoryFullName,
         acceptedTerms: step2.acceptedTerms,
-        fileUpload,
+        signatureUrl: fileUpload.fileUrl,
       },
     };
-    const joueur = await this.userRepository.create(joueurData);
+    await this.playerRepository.create(playerData);
 
-    // 5. Créer les garants et les relations si le joueur n'est pas autonome
-    let guardiansCreated: any[] = [];
-    if (!step1.selfManaged && step1.guardians && step1.guardians.length > 0) {
-      for (let idx = 0; idx < step1.guardians.length; idx++) {
-        const g = step1.guardians[idx];
-        let guardian = await this.userRepository.findByEmail(g.email);
-        if (!guardian) {
-          const tempPassword = Math.random().toString(36).slice(-8);
-          const hashedTemp = await bcrypt.hash(tempPassword, 10);
-          guardian = await this.userRepository.create({
-            email: g.email,
-            passwordHash: hashedTemp,
-            role: 'parent',
-            registrationStatus: 'parent_invité',
-            registrationStep: 'formulaire',
-            firstName: g.firstName,
-            lastName: g.lastName,
-            phone: g.phone,
-          });
-        }
-        // Créer la relation
-        await this.guardianRelationshipsRepo.create({
-          guardianId: guardian.id,
-          playerId: joueur.id,
-          relationship: g.relationship as "Mère" | "Père" | "Tuteur" | undefined,
-          permissions: { canPay: true, canRegister: false },
+
+    // 6. Créer les garants et relations (inchangé)
+  let guardiansCreated: any[] = [];
+  if (!step1.selfManaged && step1.guardians && step1.guardians.length > 0) {
+    for (const g of step1.guardians) {
+      let guardian = await this.userRepository.findByEmail(g.email);
+      if (!guardian) {
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const hashedTemp = await bcrypt.hash(tempPassword, 10);
+        guardian = await this.userRepository.create({
+          email: g.email,
+          passwordHash: hashedTemp,
+          role: 'parent',
+          registrationStatus: 'parent_invité',
+          firstName: g.firstName,
+          lastName: g.lastName,
+          phone: g.phone,
         });
-        guardiansCreated.push(guardian);
       }
+      await this.guardianRelationshipsRepo.create({
+        guardianId: guardian.id,
+        playerId: joueur.id,
+        relationship: g.relationship as 'Mère' | 'Père' | 'Tuteur' | undefined,
+        permissions: { canPay: true, canRegister: false },
+      });
+      guardiansCreated.push(guardian);
     }
+  }
 
-    // 6. Si le joueur est autonome, on peut stocker le contact d'urgence (déjà dans joueur)
+    // 7. Upload des documents (inchangé)
+    const filesUploaded = await this.documentService.userFilesupload(joueur.id, inscriptionFiles);
 
-    // 7. Envoyer des notifications ? (mail au joueur pour l'informer que l'inscription est soumise)
-
-    // 8. Enregistrement des documents de l'utilisateur
-    let filesUploaded: Promise<any[]> = this.documentService.userFilesupload(joueur.id, inscriptionFiles);
 
     // 9. Définitions des paiements à effectuer
 
@@ -151,28 +148,12 @@ export class InscriptionService {
     const currentMonthName = now.toLocaleString('default', {month: 'long'});
 
 
-    /* this.paymentService.createObligation({
-      playerId: joueur.id,
-      amount: 15000,
-      dueDate: endMonthString,
-      description: `Mensualité du mois de ${currentMonthName}`,
-      status : 'pending'
-    })
-
-    this.paymentService.createObligation({
-      playerId: joueur.id,
-      amount: 50000,
-      dueDate: endMonthString,
-      description: `Inscription annuelle`,
-      status : 'pending'
-    }) */
-
     // 10. Envoie des mails de confirmations aux différents garants.
     
     
 
 
-    return { joueur, guardiansCreated, filesUploaded };
+    return { joueur, player: playerData, guardiansCreated, filesUploaded };
   }
 
   async validateRegistration(userId: number){

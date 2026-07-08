@@ -1,17 +1,41 @@
+// dto/user.dto.ts
+import { players, users } from '@/database/db';
+import { createSelectSchema, createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-export const UpdateProfileSchema = z.object({
-  email: z.string().email().optional(),
-  notificationPreferences: z
-    .object({
-      email: z.boolean().optional(),
-      sms: z.boolean().optional(),
-      push: z.boolean().optional(),
-    })
-    .optional(),
+// Schémas de base
+export const UserSelectSchema = createSelectSchema(users).omit({ passwordHash: true });
+export const UserInsertSchema = createInsertSchema(users);
+export const PlayerSelectSchema = createSelectSchema(players);
+export const PlayerInsertSchema = createInsertSchema(players);
+
+// DTO pour la réponse avec détails joueur (combinaison)
+export const UserWithPlayerSchema = UserSelectSchema.extend({
+  playerDetails: PlayerSelectSchema.nullable(),
 });
 
-export const ChangePasswordSchema = z.object({
-  oldPassword: z.string().min(6),
-  newPassword: z.string().min(6),
+export type UserWithPlayer = z.infer<typeof UserWithPlayerSchema>;
+
+// DTO pour la mise à jour du profil (on autorise la mise à jour des champs de users et players)
+export const UpdateProfileSchema = UserInsertSchema.partial().extend({
+  // On peut ajouter des champs provenant de players
+  birthDate: z.string().optional(),
+  school: z.string().optional(),
+  class: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  registrationStep: z.string().optional(),
+  attestationData: z.object({
+    signatoryType: z.enum(['self', 'guardian']),
+    selectedGuardianIndex: z.number().optional(),
+    signatoryFullName: z.string(),
+    acceptedTerms: z.boolean(),
+    signatureUrl: z.string(),
+  }).optional(),
+}).omit({ 
+  passwordHash: true, 
+  createdAt: true, 
+  updatedAt: true 
 });
+
+export type UpdateProfileDto = z.infer<typeof UpdateProfileSchema>;

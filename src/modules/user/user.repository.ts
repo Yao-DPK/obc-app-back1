@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db, users, eq, and, inArray } from '../../database/db';
+import { db, users, eq, and, inArray, players, PlayerSelect } from '../../database/db';
 import { UserInsert, UserSelect } from '../../database/db';
 
 @Injectable()
@@ -54,6 +54,16 @@ export class UserRepository {
   ): Promise<UserSelect[]> {
     return await db.select().from(users).where(eq(users.registrationStatus, status));
   }
+
+  /* async findPlayersWithDetails(): Promise<{user: UserSelect, player: PlayerSelect}[]> {
+    const players_with_detail = await db
+      .select()
+      .from(users)
+      .innerJoin(players, eq(users.id, players.userId))
+      .where(eq(users.role, 'player'));
+
+    return players_with_detail;
+  } */
 
   // ========== UTILITAIRES ==========
 
