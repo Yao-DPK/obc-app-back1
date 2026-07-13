@@ -7,6 +7,9 @@ import { FullRegistrationSchema } from './dto/player-registration.dto';
 import { GuardianRelationshipsRepository } from '../guardian/guardian.repository';
 import { DocumentService } from '../document/document.service';
 import { PlayerRepository } from '../user/player.repository';
+import { EmailService } from '../email/email.service';
+import { AuthService } from '../auth/auth.service';
+import { ConfigService } from '@nestjs/config';
 
 
 
@@ -16,7 +19,10 @@ export class InscriptionService {
     private userRepository: UserRepository,
     private guardianRelationshipsRepo: GuardianRelationshipsRepository,
     private documentService: DocumentService,
-    private playerRepository: PlayerRepository
+    private playerRepository: PlayerRepository,
+    private emailService: EmailService,
+    private authService: AuthService, 
+    private configService: ConfigService,
   ) {}
 
   async upload (userId: number,
@@ -46,117 +52,156 @@ export class InscriptionService {
 
   
 
-  async preRegister(
-    data: z.infer<typeof FullRegistrationSchema>,
-    signature: { buffer: Buffer; filename: string; mimetype: string },
-    inscriptionFiles: {
-      buffer: Buffer;
-      filetype: string;
-      filename: string;
-      mimetype: string;
-      isObligatory?: boolean;
-    }[],
-  ) {
-    const { step1, step2 } = data;
+ async preRegister(
+  data: z.infer<typeof FullRegistrationSchema>,
+  signature: { buffer: Buffer; filename: string; mimetype: string },
+  inscriptionFiles: {
+    buffer: Buffer;
+    filetype: string;
+    filename: string;
+    mimetype: string;
+    isObligatory?: boolean;
+  }[],
+) {
+  const { step1, step2 } = data;
 
-    // 1. Vérifier email du joueur
-    const existingPlayer = await this.playerRepository.findByBirthDay(step1.birthDate);
-    const existingUser = await this.userRepository.findById(existingPlayer?.userId!);
-    const samePlayer = existingUser?.firstName == step1.firstName && existingUser?.lastName == step1.lastName && existingUser?.gender == step1.gender
-    if (samePlayer) {
-      throw new ConflictException('Cet joueur existe déjà');
-    }
+  // 1. Vérifier email du joueur
+  const existingPlayer = await this.playerRepository.findByBirthDay(step1.birthDate);
+  const existingUser = await this.userRepository.findById(existingPlayer?.userId!);
+  const samePlayer = existingUser?.firstName == step1.firstName && 
+                     existingUser?.lastName == step1.lastName && 
+                     existingUser?.gender == step1.gender;
+  
+  if (samePlayer) {
+    throw new ConflictException('Cet joueur existe déjà');
+  }
 
-   /*  // 2. Hasher le mot de passe
-    const hashedPassword = await bcrypt.hash(step1.password, 10); */
+  // 2. Hasher le mot de passe temporaire
+  const tempPassword = Math.random().toString(36).slice(-8);
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    // 3. Upload de la signature
-    const fileUpload = await this.documentService.fileUpload(signature);
-    
-    // 4. Créer l'utilisateur (table users) – seulement les champs communs
-    const userData: any = {
-      email: step1.email,
-      //passwordHash: hashedPassword,
-      role: 'player',
-      registrationStatus: 'pre_inscrit',
-      firstName: step1.firstName,
-      lastName: step1.lastName,
-      gender: step1.gender,
-      phone: step1.phone,
-      address: step1.address,
-      // photoUrl ? (si dispo)
-    };
-    const joueur = await this.userRepository.create(userData);
+  // 3. Upload de la signature
+  const fileUpload = await this.documentService.fileUpload(signature);
+  
+  // 4. Créer l'utilisateur (table users) – seulement les champs communs
+  const userData: any = {
+    email: step1.email,
+    passwordHash: hashedPassword,
+    role: 'player',
+    registrationStatus: 'pre_inscrit',
+    firstName: step1.firstName,
+    lastName: step1.lastName,
+    gender: step1.gender,
+    phone: step1.phone,
+    address: step1.address,
+  };
+  const joueur = await this.userRepository.create(userData);
 
-    // 5. Créer l'entrée joueur (table players) – champs spécifiques
-    const playerData: any = {
-      userId: joueur.id,
-      birthDate: step1.birthDate,
-      school: step1.school,
-      class: step1.class,
-      emergencyContactName: step1.emergencyContactName,
-      emergencyContactPhone: step1.emergencyContactPhone,
-      registrationStep: 'attestation_signee', // après soumission de l'attestation
-      attestationData: {
-        signatoryType: step2.signatoryType,
-        selectedGuardianIndex: step2.selectedGuardianIndex,
-        signatoryFullName: step2.signatoryFullName,
-        acceptedTerms: step2.acceptedTerms,
-        signatureUrl: fileUpload.fileUrl,
-      },
-    };
-    await this.playerRepository.create(playerData);
+  // 5. Créer l'entrée joueur (table players) – champs spécifiques
+  const playerData: any = {
+    userId: joueur.id,
+    birthDate: step1.birthDate,
+    school: step1.school,
+    class: step1.class,
+    emergencyContactName: step1.emergencyContactName,
+    emergencyContactPhone: step1.emergencyContactPhone,
+    registrationStep: 'attestation_signee',
+    attestationData: {
+      signatoryType: step2.signatoryType,
+      selectedGuardianIndex: step2.selectedGuardianIndex,
+      signatoryFullName: step2.signatoryFullName,
+      acceptedTerms: step2.acceptedTerms,
+      signatureUrl: fileUpload.fileUrl,
+    },
+  };
+  await this.playerRepository.create(playerData);
 
-
-    // 6. Créer les garants et relations (inchangé)
+  // 6. Créer les garants
   let guardiansCreated: any[] = [];
   if (!step1.selfManaged && step1.guardians && step1.guardians.length > 0) {
     for (const g of step1.guardians) {
       let guardian = await this.userRepository.findByEmail(g.email);
+      
       if (!guardian) {
+        // 👉 Le garant n'existe pas : on crée un compte en attente de validation
         const tempPassword = Math.random().toString(36).slice(-8);
         const hashedTemp = await bcrypt.hash(tempPassword, 10);
+        
         guardian = await this.userRepository.create({
           email: g.email,
           passwordHash: hashedTemp,
           role: 'parent',
-          registrationStatus: 'parent_invité',
+          registrationStatus: 'parent_invité', // 🆕 Statut "invité" pour différencier
           gender: g.relationship == 'Mère' ? "F" : "M",
           firstName: g.firstName,
           lastName: g.lastName,
           phone: g.phone,
+          // 🔑 On ajoute un champ pour stocker le token de confirmation
+          confirmationToken: null, // Sera rempli plus tard
+          tokenExpiry: null,
         });
       }
+      
+      // Créer la relation garant-joueur
       await this.guardianRelationshipsRepo.create({
         guardianId: guardian.id,
         playerId: joueur.id,
         relationship: g.relationship as 'Mère' | 'Père' | 'Tuteur' | undefined,
         permissions: { canPay: true, canRegister: false },
+        // 🆕 Ajouter le statut de confirmation du garant
       });
+      
       guardiansCreated.push(guardian);
     }
   }
 
-    // 7. Upload des documents (inchangé)
-    const filesUploaded = await this.documentService.userFilesupload(joueur.id, inscriptionFiles);
+  // 7. Upload des documents
+  const filesUploaded = await this.documentService.userFilesupload(joueur.id, inscriptionFiles);
 
-
-    // 9. Définitions des paiements à effectuer
-
-    const now = new Date();
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const endMonthString = endOfMonth.toISOString().split('T')[0];
-    const currentMonthName = now.toLocaleString('default', {month: 'long'});
-
-
-    // 10. Envoie des mails de confirmations aux différents garants.
+  // 8. Envoi des emails aux garants - UN SEUL EMAIL AVEC UN SEUL TOKEN
+  const player_info = {
+    firstname: joueur.firstName!,
+    lastname: joueur.lastName!
+  };
+  
+  for (const g of guardiansCreated) {
+    const guardian_info = {
+      gender: g.gender,
+      lastname: g.lastName,
+      firstname: g.firstName || 'Garant'
+    };
     
+    // 🆕 Générer un seul token pour tout
+    const token = this.authService.generateGuardianToken(g.id, joueur.id);
     
-
-
-    return { joueur, player: playerData, guardiansCreated, filesUploaded };
+    // Stocker le token dans la base pour vérification ultérieure
+    await this.userRepository.update(g.id, {
+      confirmationToken: token,
+      tokenExpiry: (new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
+    });
+    
+    const frontendUrl = process.env.NODE_ENV == 'dev'
+      ? this.configService.get('FRONTEND_DEVELOPMENT_URL')
+      : this.configService.get('FRONTEND_PRODUCTION_URL');
+    
+    // 📧 Envoyer un seul email
+    await this.emailService.sendGuardianConfirmationEmail(
+      g.email,
+      player_info,
+      guardian_info,
+      frontendUrl,
+      token // Un seul token !
+    );
   }
 
+  return { 
+    joueur, 
+    player: playerData, 
+    guardiansCreated, 
+    filesUploaded,
+    message: 'Inscription enregistrée. Les garants vont recevoir un email de confirmation.'
+  };
+}
   async validateRegistration(userId: number){
     this.userRepository.update(userId, {registrationStatus: 'inscrit'});
   }

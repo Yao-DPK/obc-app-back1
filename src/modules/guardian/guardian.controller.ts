@@ -51,7 +51,7 @@ export class GuardianController {
 
   // ========== PARENT (ses propres enfants) ==========
 
-  @Get('players')
+  /* @Get('players')
   @Roles(Role.Parent)
   async getMyPlayers(@GetUser() user: any) {
     return this.guardianService.getPlayersByGuardian(user.sub);
@@ -67,7 +67,7 @@ export class GuardianController {
   @Roles(Role.Admin, Role.Super_Admin)
   async getGuardiansByPlayer(@Param('playerId') playerId: string) {
     return this.guardianService.getGuardiansByPlayer(parseInt(playerId, 10));
-  }
+  } */
 
   // ========== VÉRIFICATION D'EXISTENCE ==========
 
@@ -77,7 +77,7 @@ export class GuardianController {
     @Param('guardianId') guardianId: string,
     @Param('playerId') playerId: string,
   ) {
-    const link = await this.guardianService.getRelationship(
+    const link = await this.guardianService.findRelationship(
       parseInt(guardianId, 10),
       parseInt(playerId, 10),
     );

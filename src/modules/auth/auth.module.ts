@@ -13,6 +13,8 @@ import { OtpModule } from '../otp/otp.module';
 import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
 import { UserRepository } from '../user/user.repository';
+import { EmailModule } from '../email/email.module';
+import { GuardianModule } from '../guardian/guardian.module';
 
 @Module({
   imports: [
@@ -24,17 +26,17 @@ import { UserRepository } from '../user/user.repository';
     }),
     PassportModule,
     OtpModule,
+    EmailModule, 
+    GuardianModule,
   ],
   providers: [
     AuthService,
     UserService,
-    UserRepository,
     JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
-    EmailService,
   ],
   controllers: [AuthController],
   exports: [AuthService],

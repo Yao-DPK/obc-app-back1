@@ -26,7 +26,7 @@ export const InscriptionDocument = z.object({
 export const PreRegistrationSchema = z.object({
   // Infos du compte
   email: z.email(),
-  //password: z.string().min(6),
+  /* password: z.string().min(6), */
 
   // Infos personnelles du joueur
   firstName: z.string().min(1),

@@ -8,10 +8,12 @@ import { UserModule } from '../user/user.module';
 import { GuardianModule } from '../guardian/guardian.module';
 import { DocumentModule } from '../document/document.module';
 import { GoogleDriveModule } from '../google-drive/google-drive.module';
+import { EmailModule } from '../email/email.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [InscriptionController],
-  imports: [PaymentModule, UserModule, GuardianModule, DocumentModule, GoogleDriveModule],
+  imports: [AuthModule, EmailModule, PaymentModule, UserModule, GuardianModule, DocumentModule, GoogleDriveModule, AuthModule],
   providers: [InscriptionService],
   exports: [],
 })

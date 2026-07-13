@@ -6,7 +6,6 @@ import { UserRepository } from '../user/user.repository';
 export class GuardianService {
   constructor(
     private readonly relationshipRepo: GuardianRelationshipsRepository,
-    private readonly userRepo: UserRepository,
   ) {}
 
   // ========== CRÉATION ==========
@@ -17,8 +16,8 @@ export class GuardianService {
     permissions: { canPay?: boolean; canRegister?: boolean } = { canPay: true, canRegister: false },
   ) {
     // Vérifier que le joueur existe
-    const player = await this.userRepo.findById(playerId);
-    if (!player) throw new NotFoundException('Joueur non trouvé');
+    /* const player = await this.userRepo.findById(playerId);
+    if (!player) throw new NotFoundException('Joueur non trouvé'); */
 
     // Vérifier que le lien n'existe pas déjà
     const existing = await this.relationshipRepo.findLink(guardianId, playerId);
@@ -41,29 +40,42 @@ export class GuardianService {
     const guardianIds = relationships.map((r) => r.guardianId);
 
     // Option 1 : retourner seulement les IDs
-    //return { guardianIds };
+    return guardianIds;
 
     // Option 2 : retourner les utilisateurs complets (décommente si nécessaire)
-    const guardians = await this.userRepo.findByIds(guardianIds);
-    return guardians;
+    /* const guardians = await this.userRepo.findByIds(guardianIds);
+    return guardians; */
   }
 
   async getPlayersByGuardian(guardianId: number) {
     const relationships = await this.relationshipRepo.findByGuardianId(guardianId);
     const playerIds = relationships.map((r) => r.playerId);
     // Option 1 : retourner seulement les IDs
-    //return { playerIds };
+    return playerIds;
 
     // Option 2 : retourner les utilisateurs complets (décommente si nécessaire)
-    const players = await this.userRepo.findByIds(playerIds);
-    return players;
+    /* const players = await this.userRepo.findByIds(playerIds);
+    return players; */
   }
 
-  async getRelationship(guardianId: number, playerId: number) {
+  async findRelationship(guardianId: number, playerId: number) {
     const link = await this.relationshipRepo.findLink(guardianId, playerId);
     if (!link) throw new NotFoundException('Relation non trouvée');
     return link;
   }
+
+  async findRelationships(guardianId: number) {
+    const links = await this.relationshipRepo.findByGuardianId(guardianId);
+    if (links.length == 0) throw new NotFoundException('Aucune realtion pour cet utilisateur');
+    return links;
+  }
+
+  async findRelationshipsByStatus(guardianId: number, status: 'pending' | 'confirmed' | 'rejected') {
+    const links = await this.relationshipRepo.findByGuardianIdAndStatus(guardianId, status);
+    if (links.length == 0) throw new NotFoundException('Aucune realtion pour cet utilisateur');
+    return links;
+  }
+
 
   // ========== SUPPRESSION ==========
 
@@ -89,5 +101,9 @@ export class GuardianService {
     });
 
     return updated;
+  }
+
+  async updateStatus(id: number, status: "pending" | "confirmed" | "rejected" | null | undefined, updated_at: Date){
+    const updated = await this.relationshipRepo.update(id, {status: status, updatedAt: updated_at})
   }
 }

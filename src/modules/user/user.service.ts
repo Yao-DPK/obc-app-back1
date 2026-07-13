@@ -4,21 +4,39 @@ import { UserRepository } from './user.repository';
 import { PlayerRepository } from './player.repository';
 import { PlayerSelect, UserSelect } from '../../database/db';
 import { UpdateProfileDto } from './dto/user.dto';
+import { GuardianService } from '../guardian/guardian.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly playerRepository: PlayerRepository,
+    private readonly guardianService: GuardianService,
   ) {}
 
   // ========== LECTURE ==========
 
-  async getUser(userId: number): Promise<Omit<UserSelect, 'passwordHash'>> {
-    const user = await this.userRepository.findById(userId);
+  async getUsersByIds(ids: number[]): Promise<Omit<UserSelect, 'passwordHash'>[]> {
+    const users = await this.userRepository.findByIds(ids);
+    return users.map(({ passwordHash, ...safe }) => safe);
+  }
+
+  async findById(id: number): Promise<Omit<UserSelect, 'passwordHash'>>{
+    const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    const { passwordHash, ...safeUser } = user;
-    return safeUser;
+    return this.safe(user);
+  }
+
+  async findByEmail(email: string): Promise<Omit<UserSelect, 'passwordHash'>>{
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    return this.safe(user);
+  }
+
+  async findByEmailUnrestricted(email: string): Promise<UserSelect>{
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    return user;
   }
 
   async getUserWithDetails(userId: number): Promise<Omit<UserSelect, 'passwordHash'> & { playerDetails: any }> {
@@ -30,9 +48,25 @@ export class UserService {
       playerDetails = await this.playerRepository.findByUserId(userId);
     }
 
-    const { passwordHash, ...safeUser } = user;
+    const safeUser = await this.safe(user);
     return { ...safeUser, playerDetails };
   }
+
+  async getUsersWithDetails(ids: number[]): Promise<Array<Omit<UserSelect, 'passwordHash'> & { playerDetails: PlayerSelect }>> {
+    const users = await this.userRepository.findByIds(ids);
+    const userIds = users.filter(u => u.role === 'player').map(u => u.id);
+    const playerDetailsMap = new Map<number, any>();
+    if (userIds.length > 0) {
+        const players = await this.playerRepository.findByUserIds(userIds);
+        players.forEach(p => playerDetailsMap.set(p.userId, p));
+    }
+    return users.map(user => {
+        const { passwordHash, ...safeUser } = user;
+        const playerDetails = playerDetailsMap.get(user.id) || null;
+        return { ...safeUser, playerDetails };
+    });
+}
+
 
   async getUserRestricted(userId: number): Promise<Omit<UserSelect, 'passwordHash'>> {
     const user = await this.userRepository.findById(userId);
@@ -46,10 +80,28 @@ export class UserService {
     return safeUser;
   }
 
-  async getUsersByIds(ids: number[]): Promise<Omit<UserSelect, 'passwordHash'>[]> {
-    const users = await this.userRepository.findByIds(ids);
-    return users.map(({ passwordHash, ...safe }) => safe);
+  
+  async getGuardiansByPlayer(playerId: number){
+    const guardianIds = await this.guardianService.getGuardiansByPlayer(playerId);
+    if(!guardianIds){
+      return new Error("Ce joueur n'a pas de tuteur");
+    }
+    const guardians = await this.getUsersByIds(guardianIds);
+    return guardians; 
   }
+
+  async getPlayersByGuardian(guardianId: number){
+    const playerIds = await this.guardianService.getPlayersByGuardian(guardianId);
+    if(!playerIds){
+      return new Error("Ce tuteur n'a pas de joueur");
+    }
+
+    const players = await this.getUsersWithDetails(playerIds);
+    return players;
+    
+  }
+
+  
 
   // ========== MISE À JOUR ==========
 
@@ -118,16 +170,46 @@ export class UserService {
     return { success: true };
   }
 
+  async setFirstPassword(
+    userId: number,
+    newPassword: string,
+  ): Promise<{ success: true }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(userId, { passwordHash: newHash });
+
+    return { success: true };
+  }
+
+  async updateToken(id: number, confirmationToken: string | null, tokenExpiry: Date | null){
+    const updated = await this.userRepository.update(id, {confirmationToken: confirmationToken, tokenExpiry: tokenExpiry});
+    return updated;
+  }
+
+
   // ========== STATUTS ==========
 
   async updateRegistrationStatus(
     userId: number,
-    status: 'inscrit' | 'rejeté',
+    status: string,
   ): Promise<{ success: true }> {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     await this.userRepository.update(userId, { registrationStatus: status });
+    return { success: true };
+  }
+
+  async updateVerificationStatus(
+    userId: number,
+    status: boolean,
+  ): Promise<{ success: true }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    await this.userRepository.update(userId, { isVerified: status });
     return { success: true };
   }
 
@@ -137,5 +219,9 @@ export class UserService {
     return this.userRepository.exists(userId);
   }
 
+  async safe(user: UserSelect){
+    const {passwordHash, ...safeUser} = user;
+    return safeUser;
+  }
   
 }

@@ -19,6 +19,7 @@ import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { UserRepository } from './user.repository';
 import { Public } from '../common/decorators/public.decorator';
+import { GuardianService } from '../guardian/guardian.service';
 
 
 @Controller('users')
@@ -26,6 +27,7 @@ import { Public } from '../common/decorators/public.decorator';
 export class UserController {
   constructor(
     private readonly userService: UserService,
+    private readonly guardianService: GuardianService,
     private userRepository: UserRepository,
   ) {}
 
@@ -47,11 +49,17 @@ export class UserController {
 
   @Get(':role')
   @UseGuards(RolesGuard)
-  @Roles(Role.Super_Admin)
-  async getUsersByRole(@Param('role') role: 'player' | 'parent' | 'admin') {
+  @Roles(Role.Super_Admin, Role.Admin, Role.Parent)
+  async getUsersByRole(@GetUser() authUser: any, @Param('role') role: 'player' | 'parent' | 'admin') {
+    if (authUser.role == 'super_admin'){
     if (!['player', 'parent', 'admin'].includes(role)) {
       throw new BadRequestException('Rôle invalide');
     }
+  } else if ((authUser.role == 'admin' || 'parent')) {
+    if (!['player', 'parent'].includes(role)) {
+      throw new BadRequestException('Rôle invalide');
+    }
+  }
     return this.userRepository.findByRole(role);
   }
 
@@ -93,8 +101,39 @@ export class UserController {
       return this.userService.getUserRestricted(targetId);
     }
 
-    return this.userService.getUser(targetId);
+    return this.userService.findById(targetId);
   }
+
+  @Get('me/players')
+  @Roles(Role.Parent)
+  async getMyPlayers(
+    @GetUser() authuser: any,     
+  ){
+    return this.userService.getPlayersByGuardian(authuser.sub);
+  }
+
+  @Get('me/guardians')
+  @Roles(Role.Player)
+  async getMyGuardians(
+    @GetUser() authuser: any,     
+  ){
+    return this.userService.getGuardiansByPlayer(authuser.sub);
+  }
+
+
+  @Get('guardian/:guardianId/players')
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getPlayersByGuardian(@Param('guardianId') guardianId: string) {
+    return this.userService.getPlayersByGuardian(parseInt(guardianId, 10));
+  }
+
+  @Get('players/:playerId/guardians')
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getGuardiansByPlayer(@Param('playerId') playerId: string) {
+    return this.userService.getGuardiansByPlayer(parseInt(playerId, 10));
+  }
+
+
 
   // ========== MISE À JOUR ==========
 

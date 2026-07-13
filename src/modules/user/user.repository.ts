@@ -18,6 +18,7 @@ export class UserRepository {
 
   async findByIds(ids: number[]): Promise<UserSelect[]> {
     if (!ids || ids.length === 0) return [];
+    // TODO: Ajouter un message d'erreur au cas où l'un des ids n'existe pas(peut etre au travaers d'un systeme de gestion des erreurs personnalisé)
     return await db.select().from(users).where(inArray(users.id, ids));
   }
 

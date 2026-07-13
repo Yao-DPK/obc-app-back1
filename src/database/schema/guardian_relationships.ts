@@ -26,7 +26,9 @@ export const guardianRelationships = pgTable('guardian_relationships', {
       canRegister?: boolean;
     }>()
     .default({ canPay: true, canRegister: false }),
-  status: boolean('status').default(false),
+  status: varchar('status', { length: 50 })
+    .$type<'pending' | 'confirmed' | 'rejected'>()
+    .default('pending'),
   confirmationToken: varchar('confirmation_token', { length: 255 }),
   tokenExpiresAt: timestamp('token_expires_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

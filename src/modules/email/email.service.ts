@@ -58,30 +58,86 @@ export class EmailService {
     await this.transporter.sendMail({ to, subject, html });
   }
 
-  async sendGardianConfirmationEmail(to: string, player_info: {"firstname": string, "lastname": string}, guardian_info: {"gender": string, "lastname": string}): Promise<void> {
-    const subject = 'Confirmation Garant';
-    const confirmation_link = "";
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 500px;">
-        <h2>Confirmation Garant</h2>
-        <p>Bonjour ${guardian_info.gender == "M" ? 'Mr' : "Mme"} ${guardian_info.lastname}; </p>
-        <p>Vous avez été désigné comme garant du joueur suivant lors de son inscription à OBC: </p>
-        <p> <strong style="font-size: 24px;"> ${player_info.firstname} ${player_info.lastname} </strong></p>
-        <p>Nous vous prions de bien vouloir confirmer ou infirmer cela en cliquant sur le lien ci dessous.</p>
-        <a href="${confirmation_link}">${confirmation_link}</a>
+  // email.service.ts
+async sendGuardianConfirmationEmail(
+  to: string,
+  player_info: { firstname: string; lastname: string },
+  guardian_info: { gender: string; lastname: string; firstname: string },
+  frontendUrl: string,
+  token: string // Un seul token pour tout !
+): Promise<void> {
+  const confirmationLink = `${frontendUrl}/confirm-guardian?token=${token}&action=confirm`;
+  const rejectionLink = `${frontendUrl}/confirm-guardian?token=${token}&action=reject`;
 
-        <small>Ce lien expirera dans 24h.</small>
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        /* ... styles ... */
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>⛹️ OBC</h1>
+          <p>Confirmation de votre rôle de garant</p>
+        </div>
+        
+        <div class="content">
+          <p>Bonjour <strong>${guardian_info.firstname} ${guardian_info.lastname}</strong>,</p>
+          
+          <p>Vous avez été désigné(e) comme <strong>garant</strong> pour le joueur :</p>
+          
+          <div class="player-card">
+            <p style="font-size: 28px; font-weight: bold; margin: 0; color: #1e3c72;">
+              ${player_info.firstname} ${player_info.lastname}
+            </p>
+          </div>
 
-        <hr />
-        <small>Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.</small>
+          <p>Pour finaliser cette inscription, vous devez :</p>
+          <ol>
+            <li>✅ Créer votre compte OBC (ou vous connecter si vous en avez déjà un)</li>
+            <li>✅ Confirmer votre rôle de garant</li>
+          </ol>
+
+          <div class="actions">
+            <a href="${confirmationLink}" class="btn-confirm">
+              🔐 Créer mon compte et confirmer mon rôle
+            </a>
+          </div>
+
+          <div class="info-box">
+            <strong>⏰ Attention :</strong> Ce lien expirera dans <strong>24 heures</strong>.
+          </div>
+
+          <hr />
+
+          <div style="text-align: center; margin-top: 20px;">
+            <p style="font-size: 14px; color: #6b7280;">
+              Si vous n'êtes pas à l'origine de cette demande :
+            </p>
+            <a href="${rejectionLink}" style="color: #dc2626; text-decoration: none; font-weight: 600;">
+              ❌ Refuser cette responsabilité
+            </a>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Cet email vous a été envoyé automatiquement dans le cadre de l'inscription d'un joueur à OBC.</p>
+        </div>
       </div>
-    `;
+    </body>
+    </html>
+  `;
 
-    await this.transporter.sendMail({
-      from: this.configService.get('EMAIL_FROM'),
-      to,
-      subject,
-      html,
-    });
-  }
+  await this.transporter.sendMail({
+    from: this.configService.get('EMAIL_FROM'),
+    to,
+    subject: '🔐 Confirmation de votre rôle de garant - OBC',
+    html,
+  });
+}
 }

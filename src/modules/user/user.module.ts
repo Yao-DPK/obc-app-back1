@@ -3,8 +3,10 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { UserRepository } from './user.repository';
 import { PlayerRepository } from './player.repository';
+import { GuardianModule } from '../guardian/guardian.module';
 
 @Module({
+  imports: [GuardianModule],
   providers: [UserService, UserRepository, PlayerRepository],
   exports: [UserService, UserRepository, PlayerRepository ],
   controllers: [UserController],

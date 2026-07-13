@@ -13,7 +13,7 @@ import {
 // ====== users (core) ======
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).unique().notNull(),
+  email: varchar('email', { length: 255 }).unique(),
   passwordHash: text('password_hash').notNull(),
   role: varchar('role', { length: 50 })
     .$type<'parent' | 'player' | 'admin' | 'super_admin'>()
@@ -31,7 +31,8 @@ export const users = pgTable('users', {
   registrationStatus: varchar('registration_status', { length: 30 })
     .default('pre_inscrit')
     .notNull(), // reste pertinent pour tous,
-
+  confirmationToken: varchar('confirmation_token', { length: 255 }).unique(),  
+  tokenExpiry: timestamp('token_expiry'),
   isVerified: boolean('isVerified').default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

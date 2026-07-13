@@ -11,30 +11,27 @@ import {
   Req,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthGuard } from './auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import type { Response, Request as ExpressRequest } from 'express';
-import { ApiController } from '../common/decorators/custom-prefix.decorator';
 import { OtpService } from '../otp/otp.service';
-import { EmailService } from '../email/email.service';
-import { UserRepository } from '../user/user.repository';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/resert-password.dto';
 import { UserService } from '../user/user.service';
 import { GetUser } from '../common/decorators/get-user.decorator';
+import { auth } from 'google-auth-library';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private otpService: OtpService,
-    private emailService: EmailService,
-    private userRepository: UserRepository,
     private readonly userService: UserService,
   ) {}
 
@@ -48,7 +45,7 @@ export class AuthController {
 
   @Get('profile')
   async getProfile(@GetUser() user: any) {
-    return this.userService.getUser(user.sub);
+    return this.userService.findById(user.sub);
   }
 
 
@@ -103,12 +100,6 @@ export class AuthController {
     return this.authService.logout(userId, res);
   }
 
-/*   @Public()
-  @Get('me')
-  getProfile(@Request() req: ExpressRequest) {
-    return req.user;
-  } */
-
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
@@ -130,4 +121,41 @@ export class AuthController {
     );
     return { message: 'Mot de passe modifié avec succès.' };
   }
+  
+  @Public()
+  @Get('verify-guardian-token')
+  async verifyGuardianToken(@Query('token') token: string) {
+    try {
+      return await this.authService.verifyGuardianToken(token);
+    } catch (error) {
+      throw new BadRequestException('Token invalide ou expiré');
+    }
+  }
+
+  @Public()
+  @Post('confirm-guardian')
+  async confirmGuardian(
+    @Body() body: { 
+      token: string; 
+      action: 'confirm' | 'reject';
+      password?: string;
+    }
+  ) {
+    try {
+      // Vérifier le token
+      await this.authService.confirmGuardian(body);
+    } catch (error: any) {
+      throw new BadRequestException(error.message || 'Erreur lors de la confirmation');
+    }
+  }
+
+  // 🆕 Renouveler le token de confirmation
+  @Public()
+  @Post('resend-guardian-confirmation')
+  async resendGuardianConfirmation(
+    @Body() body: { email: string }
+  ) {
+    await this.authService.resendGuardianConfirmation(body.email);
+  }
+
 }
