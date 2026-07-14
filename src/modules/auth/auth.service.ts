@@ -317,45 +317,6 @@ export class AuthService {
     }
     
   
-
-  async register(dto: RegisterDto) {
-    if (!dto.secretCode){
-      throw new UnauthorizedException("Code Secret Manquant");
-    }
-
-    if (dto.secretCode != process.env.REGISTER_SECRET){
-      throw new UnauthorizedException("Vous n'avez pas accès à cette opération");
-    }
-
-    const existingUser = await this.userService.findByEmailUnrestricted(dto.email);
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const newUser = await db
-      .insert(users)
-      .values({
-        email: dto.email,
-        passwordHash: hashedPassword,
-        role: dto.role,
-      })
-      .returning();
-    const token = this.jwtService.sign({
-      sub: newUser[0].id,
-      role: newUser[0].role,
-    });
-
-    return {
-      user: {
-        id: newUser[0].id,
-        email: newUser[0].email,
-        role: newUser[0].role,
-      },
-      token,
-    };
-  }
-
   async login(dto: LoginDto, res: Response) {
     const user = await this.userService.findByEmailUnrestricted(dto.email);
     if (!user) {

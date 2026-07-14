@@ -59,13 +59,6 @@ export class AuthController {
   }
 
   @Public()
-  @Post('register')
-  register(@Body() dto: RegisterDto) {
-    console.log('Received register request');
-    return this.authService.register(dto);
-  }
-
-  @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(

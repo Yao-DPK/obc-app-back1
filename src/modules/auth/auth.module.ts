@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from '../user/user.module';
 import { jwtConstants } from './constants';
 import { AuthGuard } from './auth.guard';
@@ -10,11 +9,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.stategy';
 import { OtpModule } from '../otp/otp.module';
-import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
-import { UserRepository } from '../user/user.repository';
 import { EmailModule } from '../email/email.module';
 import { GuardianModule } from '../guardian/guardian.module';
+
 
 @Module({
   imports: [
@@ -26,19 +24,23 @@ import { GuardianModule } from '../guardian/guardian.module';
     }),
     PassportModule,
     OtpModule,
-    EmailModule, 
+    EmailModule,
     GuardianModule,
   ],
   providers: [
     AuthService,
     UserService,
     JwtStrategy,
+    ...(process.env.CURRENT_ENV === 'LOCAL' ? [require('./local/auth_local.service').AuthLocalService] : []),
+    
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
   ],
-  controllers: [AuthController],
-  exports: [AuthService],
+  controllers: [
+    AuthController,
+    ...(process.env.CURRENT_ENV === 'LOCAL' ? [require('./local/auth_local.controller').AuthLocalController] : []),
+  ],
 })
 export class AuthModule {}

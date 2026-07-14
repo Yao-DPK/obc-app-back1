@@ -1,4 +1,3 @@
-import { TRPCModule } from 'nestjs-trpc-v2';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -14,8 +13,6 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuditMiddleware } from './modules/common/middleware/audit.middleware';
 import { EmailModule } from './modules/email/email.module';
 import { OtpModule } from './modules/otp/otp.module';
-
-const isProduction = process.env.NODE_ENV === 'prod';
 
 @Module({
   imports: [
