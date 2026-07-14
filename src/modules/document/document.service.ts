@@ -1,15 +1,18 @@
 // apps/api/src/modules/documents/documents.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { CreateDocumentDto, ValidateDocumentDto } from './document.dto';
 import { DocumentRepository } from './document.repository';
 import { z } from 'zod';
 import { GoogleDriveService } from '../google-drive/google-drive.service';
+import { DocumentTypeRepository } from './documentTypeRepository';
+import { DocumentTypeInsert } from '@/database/db';
 
 @Injectable()
 export class DocumentService {
   constructor(
     private documentRepository: DocumentRepository,
     private googleDriveService: GoogleDriveService,
+    private docTypeRepo: DocumentTypeRepository
 
   ) {}
 
@@ -75,6 +78,11 @@ export class DocumentService {
     return this.documentRepository.findPending();
   }
 
+  async getDocumentsByPlayerIds(playerIds: number[]) {
+  if (!playerIds.length) return [];
+  return this.documentRepository.findByPlayerIds(playerIds);
+}
+
   async validateDocument(data: ValidateDocumentDto) {
     const { documentId, adminId, status } = data;
     const doc = await this.documentRepository.findById(documentId);
@@ -91,5 +99,51 @@ export class DocumentService {
 
   async areAllDocumentsValid(userId: number): Promise<boolean> {
     return this.documentRepository.areAllDocumentsValid(userId);
+  }
+
+  async getDocumentsByUser(userId: number) {
+    return this.documentRepository.findByUser(userId);
+  }
+
+  async getAllDocuments() {
+    return this.documentRepository.findAll();
+  }
+
+  // ========== TYPES DE DOCUMENTS ==========
+
+  async getDocumentTypes(includeInactive = false) {
+    return this.docTypeRepo.findAll(includeInactive);
+  }
+
+  async getDocumentTypeById(id: number) {
+    const docType = await this.docTypeRepo.findById(id);
+    if (!docType) throw new NotFoundException('Type de document non trouvé');
+    return docType;
+  }
+
+  async createDocumentType(data: DocumentTypeInsert) {
+    const existing = await this.docTypeRepo.findByName(data.name);
+    if (existing) throw new ConflictException('Un type avec ce nom existe déjà');
+    return this.docTypeRepo.create(data);
+  }
+
+  async updateDocumentType(id: number, data: Partial<DocumentTypeInsert>) {
+    const docType = await this.docTypeRepo.findById(id);
+    if (!docType) throw new NotFoundException('Type de document non trouvé');
+
+    if (data.name) {
+      const existing = await this.docTypeRepo.findByName(data.name);
+      if (existing && existing.id !== id) {
+        throw new ConflictException('Un type avec ce nom existe déjà');
+      }
+    }
+
+    return this.docTypeRepo.update(id, data);
+  }
+
+  async deleteDocumentType(id: number) {
+    const docType = await this.docTypeRepo.findById(id);
+    if (!docType) throw new NotFoundException('Type de document non trouvé');
+    await this.docTypeRepo.delete(id);
   }
 }

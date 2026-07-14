@@ -15,6 +15,13 @@
       "when": 1783866692898,
       "tag": "0001_optimal_kat_farrell",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784032669241,
+      "tag": "0002_condemned_rick_jones",
+      "breakpoints": true
     }
   ]
 }

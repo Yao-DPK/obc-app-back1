@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db, paymentObligations, eq, and, desc } from '@/database/db';
+import { db, paymentObligations, eq, and, desc, sql, or } from '@/database/db';
 import type { ObligationInsert, ObligationSelect } from '@/database/db';
 
 @Injectable()
@@ -19,13 +19,25 @@ export class PaymentObligationRepository {
     return obligation || null;
   }
 
-  async findByUser(userId: number): Promise<ObligationSelect[]> {
+   async findByUserId(userId: number): Promise<ObligationSelect[]> {
     return db
-      .select()
-      .from(paymentObligations)
-      .where(eq(paymentObligations.userId, userId))
-      .orderBy(desc(paymentObligations.createdAt));
-  }
+        .select()
+        .from(paymentObligations)
+        .where(eq(paymentObligations.userId, userId));
+    }
+
+    async findByPlayerIds(playerIds: number[]): Promise<ObligationSelect[]> {
+      if (!playerIds.length) return [];
+
+      // On filtre les obligations dont playerIds contient au moins un des IDs
+      const conditions = playerIds.map(id =>
+        sql`${paymentObligations.playerIds} @> ${JSON.stringify([id])}::jsonb`
+      );
+      return db
+        .select()
+        .from(paymentObligations)
+        .where(or(...conditions));
+    }
 
   async findByEvent(eventId: number): Promise<ObligationSelect[]> {
     return db

@@ -327,10 +327,11 @@ export class AuthService {
       throw new UnauthorizedException("Vous n'avez pas accès à cette opération");
     }
 
-    const existingUser = await this.userService.findByEmail(dto.email);
+    const existingUser = await this.userService.findByEmailUnrestricted(dto.email);
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const newUser = await db
       .insert(users)
@@ -344,6 +345,7 @@ export class AuthService {
       sub: newUser[0].id,
       role: newUser[0].role,
     });
+
     return {
       user: {
         id: newUser[0].id,
@@ -356,9 +358,14 @@ export class AuthService {
 
   async login(dto: LoginDto, res: Response) {
     const user = await this.userService.findByEmailUnrestricted(dto.email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (!valid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    
     const { passwordHash, ...safeUser } = user;
 
 
@@ -370,7 +377,6 @@ export class AuthService {
     );
     await this.generateRefreshToken(user.id, res);
 
-    console.log(`Returned Logged user: ${JSON.stringify(safeUser)}`);
     return {
       user: safeUser,
       accessToken,
@@ -445,8 +451,7 @@ export class AuthService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await this.userService.setFirstPassword(user.id,  hashedPassword );
+    await this.userService.setFirstPassword(user.id,  newPassword);
     // Optionnel : supprimer tous les refresh tokens de l'utilisateur
   }
 }

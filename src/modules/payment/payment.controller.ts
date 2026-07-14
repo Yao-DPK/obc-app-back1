@@ -10,11 +10,15 @@ import {
   HttpStatus,
   UseGuards,
   ParseIntPipe,
+  Query,
+  Delete,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import type {
   CreateIntentDto,
   CreateObligationDto,
+  CreatePaymentEventDto,
+  UpdatePaymentEventDto,
   VerifyPaymentDto,
 } from './payment.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -78,6 +82,19 @@ export class PaymentController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.paymentService.cancelObligation(id, userId);
+  }
+
+  @Get('obligations')
+  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
+  async getObligations(
+    @GetUser('id') userId: number,
+    @Query('playerIds') playerIds?: string,
+  ) {
+    if (playerIds) {
+      const ids = playerIds.split(',').map(id => parseInt(id));
+      return this.paymentService.getObligationsByPlayerIds(ids);
+    }
+    return this.paymentService.getObligationsByUser(userId);
   }
 
   // ============================================================
@@ -158,5 +175,40 @@ export class PaymentController {
   @AdminOnly()
   async getUserSummary(@Param('userId', ParseIntPipe) userId: number) {
     return this.paymentService.getUserPaymentSummary(userId);
+  }
+
+  // ============================================================
+  // ADMIN : GESTION DES ÉVÉNEMENTS
+  // ============================================================
+
+  @Get('admin/events')
+  @AdminOnly()
+  async getAllEvents(@Query('includeInactive') includeInactive: string) {
+    const include = includeInactive === 'true';
+    return this.paymentService.getAllEvents(include);
+  }
+
+  @Post('admin/events')
+  @AdminOnly()
+  @HttpCode(HttpStatus.CREATED)
+  async createEvent(@Body() dto: CreatePaymentEventDto) {
+    return this.paymentService.createEvent(dto);
+  }
+
+  @Patch('admin/events/:id')
+  @AdminOnly()
+  @HttpCode(HttpStatus.OK)
+  async updateEvent(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePaymentEventDto,
+  ) {
+    return this.paymentService.updateEvent(id, dto);
+  }
+
+  @Delete('admin/events/:id')
+  @AdminOnly()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteEvent(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentService.deleteEvent(id);
   }
 }

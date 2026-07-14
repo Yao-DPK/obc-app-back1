@@ -7,6 +7,9 @@ import {
   CreateObligationDto,
   CreateIntentDto,
   VerifyPaymentDto,
+  PaymentEvent,
+  CreatePaymentEventDto,
+  UpdatePaymentEventDto,
 } from './payment.dto';
 
 @Injectable()
@@ -27,6 +30,29 @@ export class PaymentService {
     const event = await this.eventRepo.findById(id);
     if (!event) throw new NotFoundException('Événement non trouvé');
     return event;
+  }
+
+  async getAllEvents(includeInactive = false): Promise<PaymentEvent[]> {
+    if (includeInactive) {
+      return this.eventRepo.findAll();
+    }
+    return this.eventRepo.findAllActive();
+  }
+
+  async createEvent(dto: CreatePaymentEventDto): Promise<PaymentEvent> {
+    return this.eventRepo.create(dto);
+  }
+
+  async updateEvent(id: number, dto: UpdatePaymentEventDto): Promise<PaymentEvent> {
+    const event = await this.eventRepo.findById(id);
+    if (!event) throw new NotFoundException('Événement non trouvé');
+    return this.eventRepo.update(id, dto);
+  }
+
+  async deleteEvent(id: number): Promise<void> {
+    const event = await this.eventRepo.findById(id);
+    if (!event) throw new NotFoundException('Événement non trouvé');
+    await this.eventRepo.delete(id);
   }
 
   // ========== OBLIGATIONS ==========
@@ -62,7 +88,7 @@ export class PaymentService {
 
 
   async getObligationsByUser(userId: number) {
-    return this.obligationRepo.findByUser(userId);
+    return this.obligationRepo.findByUserId(userId);
   }
 
   async getObligationWithIntents(obligationId: number) {
@@ -76,6 +102,11 @@ export class PaymentService {
       intents,
     };
   }
+
+    async getObligationsByPlayerIds(playerIds: number[]) {
+      if (!playerIds.length) return [];
+      return this.obligationRepo.findByPlayerIds(playerIds);
+    }
 
   // ========== INTENTIONS ==========
 
@@ -195,7 +226,7 @@ export class PaymentService {
   // ========== STATISTIQUES / RÉCAPITULATIFS ==========
 
   async getUserPaymentSummary(userId: number) {
-    const obligations = await this.obligationRepo.findByUser(userId);
+    const obligations = await this.obligationRepo.findByUserId(userId);
 
     const totalObligations = obligations.length;
     const totalAmount = obligations.reduce((sum, o) => sum + Number(o.totalAmount), 0);

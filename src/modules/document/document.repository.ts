@@ -1,8 +1,8 @@
 // apps/api/src/modules/documents/document.repository.ts
 import { db } from 'src/database/db';
-import { documents } from '../../database/schema';
+import { documents, DocumentSelect } from '../../database/schema';
 import type { Document } from './document.dto';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 
 export type CreateDocumentInput = {
   userId: number;
@@ -35,6 +35,12 @@ export class DocumentRepository {
     return doc;
   }
 
+  async findAll() {
+    const [doc] = await db.select().from(documents);
+    return doc;
+  }
+
+
   async findById(id: number) {
     const [doc] = await db.select().from(documents).where(eq(documents.id, id));
     return doc;
@@ -59,6 +65,11 @@ export class DocumentRepository {
       .from(documents)
       .where(and(eq(documents.userId, userId), eq(documents.type, type)));
   }
+
+  async findByPlayerIds(playerIds: number[]): Promise<DocumentSelect[]> {
+  if (!playerIds.length) return [];
+  return db.select().from(documents).where(inArray(documents.userId, playerIds));
+}
 
   async update(id: number, data: Partial<Omit<Document, "id">>) {
     const [updated] = await db

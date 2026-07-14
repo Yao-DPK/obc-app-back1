@@ -112,6 +112,18 @@ export class AuthController {
   }
 
   @Public()
+  @Get('verify-reset-token')
+  async verifyResetToken(@Query('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Token manquant');
+    }
+
+    const result = await this.authService.verifyResetToken(token);
+    return result; // { valid: boolean, email?: string }
+  }
+
+
+  @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
@@ -126,6 +138,7 @@ export class AuthController {
   @Get('verify-guardian-token')
   async verifyGuardianToken(@Query('token') token: string) {
     try {
+      console.log(`getting token req`);
       return await this.authService.verifyGuardianToken(token);
     } catch (error) {
       throw new BadRequestException('Token invalide ou expiré');

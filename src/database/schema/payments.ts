@@ -20,7 +20,7 @@ export const paymentEvents = pgTable('payment_events', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   description: varchar('description', { length: 500 }),
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  amount: decimal('amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
   allowInstallments: boolean('allow_installments').default(false),
   startDate: timestamp('start_date'),
   endDate: timestamp('end_date'),

@@ -16,6 +16,12 @@ export class UserRepository {
     return user || null;
   }
 
+  async findByIdAndRole(id: number, role: 'player' | 'parent' | 'admin'): Promise<UserSelect | null> {
+    const [user] = await db.select().from(users).where(and(eq(users.id, id), eq(users.role, role)));
+    return user || null;
+  }
+
+
   async findByIds(ids: number[]): Promise<UserSelect[]> {
     if (!ids || ids.length === 0) return [];
     // TODO: Ajouter un message d'erreur au cas où l'un des ids n'existe pas(peut etre au travaers d'un systeme de gestion des erreurs personnalisé)

@@ -27,6 +27,12 @@ export class UserService {
     return this.safe(user);
   }
 
+  async findByRoleAndId(id: number, role: 'player' | 'parent' | 'admin'): Promise<Omit<UserSelect, 'passwordHash'>>{
+    const user = await this.userRepository.findByIdAndRole(id, role);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    return this.safe(user);
+  }
+
   async findByEmail(email: string): Promise<Omit<UserSelect, 'passwordHash'>>{
     const user = await this.userRepository.findByEmail(email);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
@@ -35,8 +41,8 @@ export class UserService {
 
   async findByEmailUnrestricted(email: string): Promise<UserSelect>{
     const user = await this.userRepository.findByEmail(email);
-    if (!user) throw new NotFoundException('Utilisateur non trouvé');
-    return user;
+    //if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    return user!;
   }
 
   async getUserWithDetails(userId: number): Promise<Omit<UserSelect, 'passwordHash'> & { playerDetails: any }> {
@@ -179,7 +185,6 @@ export class UserService {
 
     const newHash = await bcrypt.hash(newPassword, 10);
     await this.userRepository.update(userId, { passwordHash: newHash });
-
     return { success: true };
   }
 

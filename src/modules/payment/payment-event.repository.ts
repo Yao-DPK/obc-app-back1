@@ -10,6 +10,13 @@ export class PaymentEventRepository {
     return event;
   }
 
+  async findAll(): Promise<EventSelect[]> {
+    return db
+      .select()
+      .from(paymentEvents)
+      .orderBy(desc(paymentEvents.startDate));
+  }
+
   async findAllActive(): Promise<EventSelect[]> {
     return db
       .select()
@@ -23,13 +30,13 @@ export class PaymentEventRepository {
     return event || null;
   }
 
-  async update(id: number, data: Partial<EventInsert>): Promise<EventSelect | null> {
+  async update(id: number, data: Partial<EventInsert>): Promise<EventSelect> {
     const [updated] = await db
       .update(paymentEvents)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(paymentEvents.id, id))
       .returning();
-    return updated || null;
+    return updated;
   }
 
   async delete(id: number): Promise<void> {

@@ -18,8 +18,7 @@ import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { UserRepository } from './user.repository';
-import { Public } from '../common/decorators/public.decorator';
-import { GuardianService } from '../guardian/guardian.service';
+
 
 
 @Controller('users')
@@ -27,7 +26,6 @@ import { GuardianService } from '../guardian/guardian.service';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly guardianService: GuardianService,
     private userRepository: UserRepository,
   ) {}
 
@@ -61,6 +59,22 @@ export class UserController {
     }
   }
     return this.userRepository.findByRole(role);
+  }
+
+  @Get(':role/:id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Super_Admin, Role.Admin, Role.Parent)
+  async getUserByRoleAndId(@GetUser() authUser: any, @Param('role') role: 'player' | 'parent' | 'admin', @Param('id') id: number) {
+    if (authUser.role == 'super_admin'){
+    if (!['player', 'parent', 'admin'].includes(role)) {
+      throw new BadRequestException('Rôle invalide');
+    }
+  } else if ((authUser.role == 'admin' || 'parent')) {
+    if (!['player', 'parent'].includes(role)) {
+      throw new BadRequestException('Rôle invalide');
+    }
+  }
+    return this.userService.findByRoleAndId(id, role);
   }
 
   @Patch(':userId/validate-registration')
