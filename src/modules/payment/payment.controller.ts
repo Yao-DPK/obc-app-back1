@@ -97,6 +97,16 @@ export class PaymentController {
     return this.paymentService.getObligationsByUser(userId);
   }
 
+  @Patch('obligations/:id/status')
+  @AdminOnly()
+  @HttpCode(HttpStatus.OK)
+  async updateObligationStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: string,
+  ) {
+    return this.paymentService.updateObligationStatus(id, status);
+  }
+
   // ============================================================
   // INTENTIONS DE PAIEMENT (parent)
   // ============================================================

@@ -13,7 +13,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [InscriptionController],
-  imports: [AuthModule, EmailModule, PaymentModule, UserModule, GuardianModule, DocumentModule, GoogleDriveModule, AuthModule],
+  imports: [AuthModule, EmailModule, PaymentModule, UserModule, GuardianModule, DocumentModule, GoogleDriveModule],
   providers: [InscriptionService],
   exports: [],
 })

@@ -108,6 +108,18 @@ export class PaymentService {
       return this.obligationRepo.findByPlayerIds(playerIds);
     }
 
+    async updateObligationStatus(id: number, status: string) {
+    const obligation = await this.obligationRepo.findById(id);
+    if (!obligation) throw new NotFoundException('Obligation non trouvée');
+
+    const validStatus = ['pending', 'paid', 'overdue', 'cancelled', 'partial'];
+    if (!validStatus.includes(status)) {
+      throw new BadRequestException('Statut invalide');
+    }
+
+    return this.obligationRepo.update(id, { status });
+  }
+
   // ========== INTENTIONS ==========
 
   async createIntent(userId: number, dto: CreateIntentDto) {

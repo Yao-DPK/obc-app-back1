@@ -29,9 +29,8 @@ import { GuardianModule } from '../guardian/guardian.module';
   ],
   providers: [
     AuthService,
-    UserService,
     JwtStrategy,
-    ...(process.env.CURRENT_ENV === 'LOCAL' ? [require('./local/auth_local.service').AuthLocalService] : []),
+    ...(process.env.CURRENT_ENV === 'REMOTE' ? [require('./local/auth_local.service').AuthLocalService] : []),
     
     {
       provide: APP_GUARD,
@@ -40,7 +39,8 @@ import { GuardianModule } from '../guardian/guardian.module';
   ],
   controllers: [
     AuthController,
-    ...(process.env.CURRENT_ENV === 'LOCAL' ? [require('./local/auth_local.controller').AuthLocalController] : []),
+    ...(process.env.CURRENT_ENV === 'REMOTE' ? [require('./local/auth_local.controller').AuthLocalController] : []),
   ],
+  exports: [AuthService]
 })
 export class AuthModule {}
