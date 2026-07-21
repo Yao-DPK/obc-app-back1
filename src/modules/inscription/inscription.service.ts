@@ -25,33 +25,6 @@ export class InscriptionService {
     private configService: ConfigService,
   ) {}
 
-  async upload (userId: number,
-    inscriptionFiles: {
-      buffer: Buffer;
-      filetype: string;
-      filename: string;
-      mimetype: string;
-      isObligatory?: boolean;
-    }[]
-  ){
-    let filesUploaded: any[] = [];
-    for (let idx = 0; idx < inscriptionFiles.length; idx++) {
-      const f = inscriptionFiles[idx];
-      const uploaded_file = await this.documentService.fileUpload(f);
-      let document_created = await this.documentService.create({
-        userId: userId,
-        type: f.filetype,
-        fileId: uploaded_file.fileId,
-        publicUrl: uploaded_file.fileUrl,
-        isObligatory: true,
-      });
-      filesUploaded.push(document_created);
-    }
-    return filesUploaded;
-  }
-
-  
-
  async preRegister(
   data: z.infer<typeof FullRegistrationSchema>,
   signature: { buffer: Buffer; filename: string; mimetype: string },
@@ -65,6 +38,7 @@ export class InscriptionService {
 ) {
   const { step1, step2 } = data;
 
+  console.log(`1`);
   // 1. Vérifier email du joueur
   const existingPlayer = await this.playerRepository.findByBirthDay(step1.birthDate);
   const existingUser = await this.userRepository.findById(existingPlayer?.userId!);
@@ -75,15 +49,15 @@ export class InscriptionService {
   if (samePlayer) {
     throw new ConflictException('Cet joueur existe déjà');
   }
+  
+    console.log(`2`);
 
   // 2. Hasher le mot de passe temporaire
   const tempPassword = Math.random().toString(36).slice(-8);
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-  // 3. Upload de la signature
-  const fileUpload = await this.documentService.fileUpload(signature);
-  
-  // 4. Créer l'utilisateur (table users) – seulement les champs communs
+    console.log(`3`);
+  // 3. Créer l'utilisateur (table users) – seulement les champs communs
   const userData: any = {
     email: step1.email,
     passwordHash: hashedPassword,
@@ -96,6 +70,14 @@ export class InscriptionService {
     address: step1.address,
   };
   const joueur = await this.userRepository.create(userData);
+
+    console.log(`4`);
+
+  // 4. Upload de la signature
+  const signUpload = await this.documentService.userFileupload(joueur.id, {...signature, filetype: "Signature Attestation"});
+  
+
+    console.log(`6`);
 
   // 5. Créer l'entrée joueur (table players) – champs spécifiques
   const playerData: any = {
@@ -111,10 +93,12 @@ export class InscriptionService {
       selectedGuardianIndex: step2.selectedGuardianIndex,
       signatoryFullName: step2.signatoryFullName,
       acceptedTerms: step2.acceptedTerms,
-      signatureUrl: fileUpload.fileUrl,
+      signatureUrl: signUpload.publicUrl,
     },
   };
   await this.playerRepository.create(playerData);
+
+    console.log(`6`);
 
   // 6. Créer les garants
   let guardiansCreated: any[] = [];
@@ -155,8 +139,15 @@ export class InscriptionService {
     }
   }
 
+    console.log(`7`);
+    console.log(`inscriptionFiles: ${JSON.stringify(inscriptionFiles.map((i) => {
+      return {...i, buffer:""};
+    }))}`);
   // 7. Upload des documents
   const filesUploaded = await this.documentService.userFilesupload(joueur.id, inscriptionFiles);
+  
+
+    console.log(`8`);
 
   // 8. Envoi des emails aux garants - UN SEUL EMAIL AVEC UN SEUL TOKEN
   const player_info = {

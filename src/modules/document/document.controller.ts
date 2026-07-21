@@ -25,6 +25,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import type { DocumentTypeInsert } from '@/database/schema';
+import { Public } from '../common/decorators/public.decorator';
+
 
 @Controller('documents')
 export class DocumentController {
@@ -154,18 +156,42 @@ export class DocumentController {
   }
 
   // ========== TYPES DE DOCUMENTS (Admin Only) ==========
-
-  @Get('types')
-  @AdminOnly()
-  async getDocumentTypes(@Query('includeInactive') includeInactive: string) {
-    return this.documentService.getDocumentTypes(includeInactive === 'true');
-  }
-
+  
   @Get('types/:id')
   @AdminOnly()
   async getDocumentTypeById(@Param('id', ParseIntPipe) id: number) {
     return this.documentService.getDocumentTypeById(id);
   }
+
+  @Public()
+  @Get('types')
+  async getDocumentTypes(@Query() query: any) {
+
+    const cleanQuery = Object.fromEntries(
+      Object.entries(query).filter(([_, value]) => value !== undefined && value !== 'undefined')
+    );
+    const names = cleanQuery['names[]'] || cleanQuery.names;
+
+    // Si c'est une chaîne (ex: "valeur1,valeur2"), on la transforme en tableau
+    const namesArray = Array.isArray(names)
+      ? names
+      : typeof names === 'string'
+      ? names.split(',')
+      : undefined;
+
+    // On reconstruit l'objet query avec le bon format
+    const normalizedQuery = {
+      ...query,
+      names: namesArray,
+    };
+    /* console.log(`query: ${JSON.stringify(normalizedQuery)}`);
+    console.log(`names: ${JSON.stringify(names)}`); */
+
+    return this.documentService.getDocumentTypes(normalizedQuery);
+  }
+
+  
+
 
   @Post('types')
   @AdminOnly()

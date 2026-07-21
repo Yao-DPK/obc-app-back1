@@ -41,7 +41,7 @@ export class InscriptionController {
 
     for (let idx = 0; idx < files.length; idx++) {
       const f = files[idx];
-      if (f.filename !== 'signature') {
+      if (f.fieldname !== 'signature') {
         otherFiles.push({
           buffer: f.buffer,
           filetype: f.fieldname,

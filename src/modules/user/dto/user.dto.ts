@@ -8,6 +8,10 @@ export const UserSelectSchema = createSelectSchema(users).omit({ passwordHash: t
 export const UserInsertSchema = createInsertSchema(users);
 export const PlayerSelectSchema = createSelectSchema(players);
 export const PlayerInsertSchema = createInsertSchema(players);
+/* 
+export type UserTDto = z.infer<typeof UserSelectSchema>;
+export type UserT2Dto = z.infer<typeof UserInsertSchema>;
+ */
 
 // DTO pour la réponse avec détails joueur (combinaison)
 export const UserWithPlayerSchema = UserSelectSchema.extend({

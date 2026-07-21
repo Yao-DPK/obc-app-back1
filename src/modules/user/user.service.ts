@@ -5,6 +5,7 @@ import { PlayerRepository } from './player.repository';
 import { PlayerSelect, UserSelect } from '../../database/db';
 import { UpdateProfileDto } from './dto/user.dto';
 import { GuardianService } from '../guardian/guardian.service';
+import { use } from 'passport';
 
 @Injectable()
 export class UserService {
@@ -27,9 +28,18 @@ export class UserService {
     return this.safe(user);
   }
 
-  async findByRoleAndId(id: number, role: 'player' | 'parent' | 'admin'): Promise<Omit<UserSelect, 'passwordHash'>>{
+  async findByRoleAndId(id: number, role: 'player' | 'parent' | 'admin'){
     const user = await this.userRepository.findByIdAndRole(id, role);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+     const safeUser = await this.safe(user);
+
+    let playerDetails: any = null;
+    if (user!.role === 'player') {
+      playerDetails = await this.playerRepository.findByUserId(user.id);
+      return {...safeUser, playerDetails};
+    }
+
     return this.safe(user);
   }
 

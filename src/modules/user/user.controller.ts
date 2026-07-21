@@ -75,7 +75,7 @@ export class UserController {
     }
   }
     return this.userService.findByRoleAndId(id, role);
-  }
+  } 
 
   @Patch(':userId/validate-registration')
   @AdminOnly()

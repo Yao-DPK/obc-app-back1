@@ -1,10 +1,13 @@
 // apps/api/src/modules/documents/document.dto.ts
+import { documents } from '@/database/schema';
+import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 export const DocumentSchema = z.object({
   id: z.number(),
   userId: z.number(),
   type: z.string(),
+  typeId: z.number(),
   fileId: z.string(),
   publicUrl: z.string().url(),
   documentStatus: z.enum(['En attente de Validation', 'Validé', 'Rejeté', 'Expiré', 'Invalide']).default('En attente de Validation').optional(),
@@ -13,6 +16,8 @@ export const DocumentSchema = z.object({
   validatedBy: z.number().nullable(),
   uploadedAt: z.date(),
 });
+
+
 
 export const CreateDocumentSchema = DocumentSchema.omit({
   id: true,
