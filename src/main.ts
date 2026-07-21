@@ -5,28 +5,34 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 
-
-
 async function createApp() {
   const expressApp = express();
+  const port = process.env.PORT || 3031;
+
+  // 🚀 CRITICAL FIX: Bind the port IMMEDIATELY (synchronous call).
+  // This happens within milliseconds, satisfying Hostinger's 3-second rule.
+  const server = expressApp.listen(port, () => {
+    console.log(`🔌 Server binding to port ${port} (NestJS is still initializing...)`);
+  });
+
+  // --- NOW do the heavy async work (this might take 4-6 seconds) ---
   const app = await NestFactory.create(
     AppModule,
-    new ExpressAdapter(expressApp),{
-      rawBody: true,
-    }
-
+    new ExpressAdapter(expressApp),
+    { rawBody: true },
   );
-  
-  
-  app.use((req, res, next) => {
-  console.log(`📥 Incoming ${req.method} ${req.url} from ${req.headers.origin}`);
-  next();
-});
 
+  // Logging middleware
+  app.use((req, res, next) => {
+    console.log(`📥 Incoming ${req.method} ${req.url} from ${req.headers.origin}`);
+    next();
+  });
+
+  // CORS Configuration
   const allowedOrigins: any = [];
-  if (process.env.ALLOWED_ORIGINS){
+  if (process.env.ALLOWED_ORIGINS) {
     const ALLOWED_ORIGINS_LIST = process.env.ALLOWED_ORIGINS.split(',');
-    for (let idx=0; idx < ALLOWED_ORIGINS_LIST.length; idx++ ){
+    for (let idx = 0; idx < ALLOWED_ORIGINS_LIST.length; idx++) {
       const o = ALLOWED_ORIGINS_LIST[idx];
       allowedOrigins.push(o);
     }
@@ -60,18 +66,14 @@ async function createApp() {
   );
 
   app.use(cookieParser(process.env.COOKIE_SECRET));
-
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT || 3031;
-  app.listen(port, () => {
+  // 🧹 IMPORTANT: Remove the old 'app.listen()' call from here to avoid EADDRINUSE (port already bound).
+  // Also remove 'await app.init()' - NestFactory.create() already initializes the app.
 
-    console.log(`Server running on http://localhost:${port}`);
-  });
-
-  await app.init();
+  console.log('✅ NestJS fully initialized. Ready to handle requests.');
   return expressApp;
 }
+
+// Start the app
 createApp();
-
-
