@@ -16,7 +16,8 @@ export class InscriptionController {
   async preRegister(@Req() req: Request) {
     console.log('🔵 Accessing pre-register');
 
-    const contentType = req.headers['content-type'] || '';
+    return req.body;
+    /* const contentType = req.headers['content-type'] || '';
     if (!contentType.includes('multipart/form-data')) {
       throw new Error('Expected multipart request');
     }
@@ -73,7 +74,7 @@ export class InscriptionController {
         mimetype: signatureFile.mimetype,
       },
       otherFiles,
-    );
+    ); */
   }
 
   @Public()
