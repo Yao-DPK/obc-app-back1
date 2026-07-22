@@ -102,7 +102,6 @@ async function createApp() {
   
   const port = process.env.PORT || 3031;
   app.listen(port, () => {
-
     console.log(`Server running on http://localhost:${port}`);
   });
 

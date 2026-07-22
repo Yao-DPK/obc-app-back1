@@ -7,7 +7,9 @@ import { Public } from '../common/decorators/public.decorator';
 
 @Controller('inscription')
 export class InscriptionController {
-  constructor(private readonly inscriptionService: InscriptionService) {}
+  constructor(private readonly inscriptionService: InscriptionService) {
+    console.log('🔵 InscriptionController - pré-register atteint');
+  }
 
   @Public()
   @Post('pre-register')

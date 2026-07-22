@@ -21,12 +21,16 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) {
-      return true;
-    }
+    
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
-        console.log('🔐 Guard - isPublic?', isPublic, 'path:', request.url);
+
+    if (isPublic) {
+      console.log('🔵 AuthGuard - isPublic:', isPublic, 'path:', request.url);
+
+      return true;
+    }
+    console.log('🔐 Guard - isPublic?', isPublic, 'path:', request.url);
 
     if (!token) {
       throw new UnauthorizedException();
