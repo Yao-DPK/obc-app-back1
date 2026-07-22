@@ -100,7 +100,12 @@ async function createApp() {
 
   );
   
-  
+  const port = process.env.PORT || 3031;
+  app.listen(port, () => {
+
+    console.log(`Server running on http://localhost:${port}`);
+  });
+
   app.use((req, res, next) => {
   console.log(`📥 Incoming ${req.method} ${req.url} from ${req.headers.origin}`);
   next();
@@ -148,11 +153,7 @@ async function createApp() {
   console.log(`allowed Orgins: ${allowedOrigins}`);
 
 
-  const port = process.env.PORT || 3031;
-  app.listen(port, () => {
-
-    console.log(`Server running on http://localhost:${port}`);
-  });
+  
 
   await app.init();
   return expressApp;
