@@ -125,9 +125,20 @@ async function createApp() {
     );
   }
 
+  app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    return res.status(204).send();
+  }
+  next();
+});
+
   app.use(
     cors({
-      origin: (origin, callback) => {
+      origin: '*'/* (origin, callback) => {
         if (
           !origin ||
           allowedOrigins.some(
@@ -139,13 +150,14 @@ async function createApp() {
         } else {
           callback(new Error('Not allowed by CORS'));
         }
-      },
+      } */,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
     }),
   );
-
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser(process.env.COOKIE_SECRET));
 
   app.setGlobalPrefix('api');
