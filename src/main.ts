@@ -138,19 +138,7 @@ async function createApp() {
 
   app.use(
     cors({
-      origin: (origin, callback) => {
-        if (
-          !origin ||
-          allowedOrigins.some(
-            (validOrigin) =>
-              validOrigin === origin || origin.match(validOrigin),
-          )
-        ) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
+      origin: allowedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
