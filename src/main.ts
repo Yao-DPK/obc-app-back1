@@ -145,6 +145,8 @@ async function createApp() {
   app.use(cookieParser(process.env.COOKIE_SECRET));
 
   app.setGlobalPrefix('api');
+  console.log(`allowed Orgins: ${allowedOrigins}`);
+
 
   const port = process.env.PORT || 3031;
   app.listen(port, () => {
