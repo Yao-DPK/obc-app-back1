@@ -127,7 +127,7 @@ export class InscriptionService {
       }
       
       // Créer la relation garant-joueur
-      await this.guardianRelationshipsRepo.create({
+      const relation = await this.guardianRelationshipsRepo.create({
         guardianId: guardian.id,
         playerId: joueur.id,
         relationship: g.relationship as 'Mère' | 'Père' | 'Tuteur' | undefined,
@@ -135,7 +135,7 @@ export class InscriptionService {
         // 🆕 Ajouter le statut de confirmation du garant
       });
       
-      guardiansCreated.push(guardian);
+      guardiansCreated.push({...guardian, relationId: relation.id});
     }
   }
 
@@ -166,9 +166,14 @@ export class InscriptionService {
     const token = this.authService.generateGuardianToken(g.id, joueur.id);
     
     // Stocker le token dans la base pour vérification ultérieure
-    await this.userRepository.update(g.id, {
+    /* WAS: await this.userRepository.update(g.id, {
       confirmationToken: token,
       tokenExpiry: (new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
+    });
+ */
+    await this.guardianRelationshipsRepo.update(g.relationId, {
+      confirmationToken: token,
+      tokenExpiresAt: (new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
     });
     
     const frontendUrl = process.env.NODE_ENV == 'dev'

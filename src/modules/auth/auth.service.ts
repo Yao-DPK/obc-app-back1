@@ -102,7 +102,7 @@ export class AuthService {
       );
     }
 
-  async resendGuardianConfirmation(email:string){
+  async resendGuardianConfirmation(email:string, playerId: number){
     const guardian = await this.userService.findByEmail(email);
     if (!guardian) {
       // Ne pas révéler si l'email existe (sécurité)
@@ -112,20 +112,12 @@ export class AuthService {
     }
 
     // Vérifier s'il a des relations en attente
-    const relationships = await this.guardianService.findRelationshipsByStatus(guardian.id, 'pending');
-
-    if (relationships.length === 0) {
-      throw new BadRequestException('Aucune demande de confirmation en attente');
-    }
-
-    // Générer un nouveau token
-    const playerId = relationships[0].playerId;
-    const newToken = this.generateGuardianToken(guardian.id, playerId);
+    const relationships = await this.guardianService.findRelationshipsByStatus(guardian.id, 'pending', {playerId: playerId});
+    const relationship = relationships[0];
+    const newToken = this.generateGuardianToken(relationship.guardianId, relationship.playerId);
 
     // Mettre à jour le token
-    guardian.confirmationToken = newToken;
-    guardian.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await this.userService.updateToken(guardian.id, newToken, new Date(Date.now() + 24 * 60 * 60 * 1000));
+    await this.guardianService.update(guardian.id, {confirmationToken: newToken, tokenExpiresAt: new Date(Date.now() + 60 * 1000)});
 
     // Récupérer les infos du joueur
     const playerUser = await this.userService.findById(playerId);
@@ -149,39 +141,60 @@ export class AuthService {
   }
 
   async verifyGuardianToken(token: string){
-      const payload = this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_SECRET'),
+      console.log('Getting guardian data for confirmation');
+      const payload = await this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
       });
+      console.log(`2`);
+      console.log(`Payload: ${JSON.stringify(payload)}`);
+
 
       if (payload.purpose !== 'guardian_confirmation') {
+        console.log(`err0`);
         throw new BadRequestException('Token invalide');
       }
 
       // Récupérer le garant depuis la base
-      const guardian = await this.userService.findById(payload.guardianId);
+      /* WAs Previously: const guardian = await this.userService.findById(payload.guardianId); */
+      const relationship = await this.guardianService.findRelationship(payload.guardianId, payload.playerId);
 
-      if (!guardian) {
-        throw new NotFoundException('Garant non trouvé');
+
+      if (!relationship) {
+        console.log(`err1`);
+        throw new NotFoundException('Relaion non trouvé');
       }
 
       // Vérifier si le token est celui stocké
-      if (guardian.confirmationToken !== token) {
+      if (relationship.confirmationToken !== token) {
+        console.log(`err2`);
         throw new BadRequestException('Token invalide');
       }
 
-      // Vérifier l'expiration
-      if (guardian.tokenExpiry && guardian.tokenExpiry < new Date()) {
-        throw new BadRequestException('Token expiré');
-      }
+      
 
       // Récupérer les infos du joueur
       const player = await this.userService.getUserWithDetails(payload.playerId);
+
+      // Récupérer les infos du garant
+      const guardian = await this.userService.findById(payload.guardianId);
+
+      // Vérifier l'expiration
+      if (relationship.tokenExpiresAt && relationship.tokenExpiresAt < new Date()) {
+          return {
+          guardianEmail: guardian.email,
+          guardianName: `${guardian.firstName} ${guardian.lastName}`,
+          playerId: player.id,
+          hasExpired: relationship.tokenExpiresAt && relationship.tokenExpiresAt < new Date(),
+        };
+          
+      }
 
       return {
         valid: true,
         guardianEmail: guardian.email,
         guardianName: `${guardian.firstName} ${guardian.lastName}`,
         playerName: `${player.firstName} ${player.lastName}`,
+        hasExpired: relationship.tokenExpiresAt && relationship.tokenExpiresAt < new Date(),
         hasAccount: guardian.registrationStatus !== 'parent_invité',
       };
     }
@@ -221,46 +234,53 @@ export class AuthService {
       const { token, action, password } = body;
   
       try {
+        console.log(`1`);
         // Vérifier le token
         const payload = this.jwtService.verify(token, {
           secret: this.configService.get('JWT_SECRET'),
         });
-  
+        
+        console.log(`2`);
+
         if (payload.purpose !== 'guardian_confirmation') {
+          console.log(`err1`);
           throw new BadRequestException('Token invalide');
         }
   
+        console.log(`3`);
         // Récupérer le garant
         const guardian = await this.userService.findById(payload.guardianId);
-  
-        if (!guardian) {
-          throw new NotFoundException('Garant non trouvé');
-        }
-  
-        // Vérifier le token stocké
-        if (guardian.confirmationToken !== token) {
-          throw new BadRequestException('Token invalide');
-        }
-  
-        if (guardian.tokenExpiry && guardian.tokenExpiry < new Date()) {
-          throw new BadRequestException('Token expiré');
-        }
-  
+
         // Récupérer la relation
         const relationship = await this.guardianService.findRelationship(
             guardian.id, 
             payload.playerId 
           );
+        console.log(`5`);
   
-        if (!relationship) {
-          throw new NotFoundException('Relation non trouvée');
+        if (!guardian) {
+          console.log(`err1`);
+          throw new NotFoundException('Garant non trouvé');
+        }
+        
+        // Vérifier le token stocké
+        if (relationship.confirmationToken !== token) {
+          console.log(`err2`);
+          throw new BadRequestException('Token invalide');
         }
   
+        if (relationship.tokenExpiresAt && relationship.tokenExpiresAt < new Date()) {
+          throw new BadRequestException('Token expiré');
+        }
+  
+        
+  
+        console.log(`7`);
         // Si l'action est "reject"
         if (action === 'reject') {
 
           await this.guardianService.updateStatus(relationship.id, 'rejected', new Date());          
-          await this.userService.updateToken(guardian.id, null, null);
+          //await this.guardianService.update(guardian.id, {confirmationToken: null, tokenExpiresAt: null});
   
           /* // Notifier l'organisation (email)
           await this.emailService.notifyGuardianRejection(
@@ -276,7 +296,10 @@ export class AuthService {
   
         // Action "confirm" - Vérifier si le garant a un compte
         const hasAccount = guardian.registrationStatus !== 'parent_invité';
-  
+        console.log(`8`)
+        
+        
+        
         if (!hasAccount) {
           // 🆕 Le garant n'a pas de compte - il doit créer son mot de passe
           if (!password) {
@@ -301,15 +324,15 @@ export class AuthService {
             throw new BadRequestException('Votre compte n\'est pas actif');
           }
         }
-  
+        
         // ✅ Confirmer le rôle de garant        
-          await this.guardianService.updateStatus(relationship.id, 'rejected', new Date());          
-          await this.userService.updateToken(guardian.id, null, null);
-  
+          await this.guardianService.updateStatus(relationship.id, 'confirmed', new Date());          
+          //await this.guardianService.update(relationship.id, {confirmationToken: null, tokenExpiresAt: null});
+        console.log(`10`);
         return {
           success: true,
           message: '✅ Vous êtes maintenant garant officiel !',
-          redirectTo: '/dashboard',
+          redirectTo: '/home',
         };
       } catch (error: any) {
         throw new BadRequestException(error.message || 'Erreur lors de la confirmation');

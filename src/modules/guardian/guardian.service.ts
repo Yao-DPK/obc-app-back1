@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { GuardianRelationshipsRepository } from './guardian.repository';
 import { UserRepository } from '../user/user.repository';
+import { GuardianRelationshipInsert } from '@/database/schema';
 
 @Injectable()
 export class GuardianService {
@@ -70,8 +71,8 @@ export class GuardianService {
     return links;
   }
 
-  async findRelationshipsByStatus(guardianId: number, status: 'pending' | 'confirmed' | 'rejected') {
-    const links = await this.relationshipRepo.findByGuardianIdAndStatus(guardianId, status);
+  async findRelationshipsByStatus(guardianId: number, status: 'pending' | 'confirmed' | 'rejected', filters?: {playerId?: number, relationship?: "Mère" | "Père" | "Tuteur"}) {
+    const links = await this.relationshipRepo.findByGuardianIdAndStatus(guardianId, status, filters);
     if (links.length == 0) throw new NotFoundException('Aucune realtion pour cet utilisateur');
     return links;
   }
@@ -105,5 +106,9 @@ export class GuardianService {
 
   async updateStatus(id: number, status: "pending" | "confirmed" | "rejected" | null | undefined, updated_at: Date){
     const updated = await this.relationshipRepo.update(id, {status: status, updatedAt: updated_at})
+  }
+
+  async update(id: number, data: Partial<GuardianRelationshipInsert>){
+    const updated = await this.relationshipRepo.update(id, data)
   }
 }

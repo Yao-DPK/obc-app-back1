@@ -134,6 +134,7 @@ export class AuthController {
       console.log(`getting token req`);
       return await this.authService.verifyGuardianToken(token);
     } catch (error) {
+      console.log(`error: ${JSON.stringify(error)}`);
       throw new BadRequestException('Token invalide ou expiré');
     }
   }
@@ -149,7 +150,8 @@ export class AuthController {
   ) {
     try {
       // Vérifier le token
-      await this.authService.confirmGuardian(body);
+      console.log(`confirming guardian`);
+      return await this.authService.confirmGuardian(body);
     } catch (error: any) {
       throw new BadRequestException(error.message || 'Erreur lors de la confirmation');
     }
@@ -159,9 +161,10 @@ export class AuthController {
   @Public()
   @Post('resend-guardian-confirmation')
   async resendGuardianConfirmation(
-    @Body() body: { email: string }
+    @Body() body: { email: string, playerId: number }
   ) {
-    await this.authService.resendGuardianConfirmation(body.email);
+    console.log('new gaurdian confirmation refresh request');
+    await this.authService.resendGuardianConfirmation(body.email, body.playerId);
   }
 
 }

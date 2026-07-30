@@ -41,16 +41,27 @@ export class GuardianRelationshipsRepository {
       .where(eq(guardianRelationships.guardianId, guardianId));
   }
 
-  async findByGuardianIdAndStatus(guardianId: number, status: 'pending' | 'confirmed' | 'rejected'): Promise<GuardianRelationshipSelect[]> {
+  async findByGuardianIdAndStatus(
+    guardianId: number,
+    status: 'pending' | 'confirmed' | 'rejected',
+    filters?: { playerId?: number; relationship?: 'Mère' | 'Père' | 'Tuteur' },
+  ): Promise<GuardianRelationshipSelect[]> {
+    const conditions = [
+      eq(guardianRelationships.guardianId, guardianId),
+      eq(guardianRelationships.status, status),
+    ];
+
+    if (filters?.playerId !== undefined) {
+      conditions.push(eq(guardianRelationships.playerId, filters.playerId));
+    }
+    if (filters?.relationship) {
+      conditions.push(eq(guardianRelationships.relationship, filters.relationship));
+    }
+
     return await db
       .select()
       .from(guardianRelationships)
-      .where(
-        and(
-          eq(guardianRelationships.guardianId, guardianId),
-          eq(guardianRelationships.status, status),
-        )
-      );
+      .where(and(...conditions));
   }
 
   async findByPlayerId(playerId: number): Promise<GuardianRelationshipSelect[]> {
