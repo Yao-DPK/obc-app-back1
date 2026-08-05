@@ -1,0 +1,1 @@
+ALTER TABLE "refresh_tokens" ALTER COLUMN "family_id" SET DEFAULT 'e1837343-10a6-4728-8014-ef91faa7b10d';

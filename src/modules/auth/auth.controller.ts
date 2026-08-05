@@ -25,7 +25,6 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/resert-password.dto';
 import { UserService } from '../user/user.service';
 import { GetUser } from '../common/decorators/get-user.decorator';
-import { auth } from 'google-auth-library';
 
 @Controller('auth')
 export class AuthController {
@@ -48,13 +47,11 @@ export class AuthController {
     return this.userService.findById(user.sub);
   }
 
-
   @Public()
   @Post('verify-email')
   async verifyEmail(@Body('email') email: string, @Body('code') code: string) {
     if (!email || !code) throw new BadRequestException('Email et code requis');
     this.otpService.verifyEmailOtp(email, code);
-    // Ici, vous pouvez marquer l'email comme vérifié en base de données
     return { message: 'Email vérifié avec succès' };
   }
 
@@ -62,12 +59,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
-    
     @Body() dto: LoginDto,
+    @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('Received login request');
-    return this.authService.login(dto, res);
+    return this.authService.login(dto, res, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip,
+    });
   }
 
   @Public()
@@ -102,7 +101,7 @@ export class AuthController {
       message:
         'Si cet email existe, vous recevrez un lien de réinitialisation.',
     };
-  }
+  }z
 
   @Public()
   @Get('verify-reset-token')
@@ -111,30 +110,31 @@ export class AuthController {
       throw new BadRequestException('Token manquant');
     }
 
-    const result = await this.authService.verifyResetToken(token);
-    return result; // { valid: boolean, email?: string }
-  }
+    const record = await this.authService.peekVerificationToken(
+      token,
+      'password_reset',
+    );
 
+    return { valid: !!record };
+  }
 
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    await this.authService.resetPassword(
+    await this.authService.verifyResetPasswordToken(
       resetPasswordDto.token,
       resetPasswordDto.newPassword,
     );
     return { message: 'Mot de passe modifié avec succès.' };
   }
-  
+
   @Public()
   @Get('verify-guardian-token')
   async verifyGuardianToken(@Query('token') token: string) {
     try {
-      console.log(`getting token req`);
       return await this.authService.verifyGuardianToken(token);
     } catch (error) {
-      console.log(`error: ${JSON.stringify(error)}`);
       throw new BadRequestException('Token invalide ou expiré');
     }
   }
@@ -142,29 +142,24 @@ export class AuthController {
   @Public()
   @Post('confirm-guardian')
   async confirmGuardian(
-    @Body() body: { 
-      token: string; 
+    @Body() body: {
+      token: string;
       action: 'confirm' | 'reject';
       password?: string;
-    }
+    },
   ) {
     try {
-      // Vérifier le token
-      console.log(`confirming guardian`);
       return await this.authService.confirmGuardian(body);
     } catch (error: any) {
       throw new BadRequestException(error.message || 'Erreur lors de la confirmation');
     }
   }
 
-  // 🆕 Renouveler le token de confirmation
   @Public()
   @Post('resend-guardian-confirmation')
   async resendGuardianConfirmation(
-    @Body() body: { email: string, playerId: number }
+    @Body() body: { email: string; playerId: number },
   ) {
-    console.log('new gaurdian confirmation refresh request');
     await this.authService.resendGuardianConfirmation(body.email, body.playerId);
   }
-
 }

@@ -10,7 +10,7 @@ import {
   date,
   index,
 } from 'drizzle-orm/pg-core';
-import { users } from './users';
+import { players, users } from './users';
 import { KayDevMetadata } from '../../types/payment.types';
 
 
@@ -65,25 +65,22 @@ export type IntentSelect = typeof paymentIntents.$inferSelect;
 /* Stocke l'avancée des paiements */
 export const paymentObligations = pgTable('payment_obligations', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .references(() => users.id)
-    .notNull(),
   eventId: integer('event_id')
     .references(() => paymentEvents.id)
     .notNull(),
-  playerIds: jsonb('player_ids').$type<number[]>(), // joueurs concernés
-  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
+  playerId: integer('player_id').references(() => users.id)
+    .notNull(), // joueurs concernés
+  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
   paidAmount: decimal('paid_amount', { precision: 10, scale: 2 }).$type<number>().default(0),
-  remainingAmount: decimal('remaining_amount', { precision: 10, scale: 2 }), // calculable, stocké pour requêtes
+  remainingAmount: decimal('remaining_amount', { precision: 10, scale: 2 }).$type<number>(), // calculable, stocké pour requêtes
   dueDate: date('due_date'),
-  description: varchar('description', { length: 255 }).notNull(),
+  description: varchar('description', { length: 255 }),
   status: varchar('status', { length: 20 })
     .default('pending')
     .notNull(), // pending, partial, paid, overdue, cancelled
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
-  userIdx: index('pay_oblig_user_idx').on(table.userId),
   statusIdx: index('pay_oblig_status_idx').on(table.status),
   eventIdx: index('pay_oblig_event_idx').on(table.eventId)
 }));

@@ -58,6 +58,28 @@ export class EmailService {
     await this.transporter.sendMail({ to, subject, html });
   }
 
+  async sendFirstLoginEmail(
+    to: string,
+    token: string,
+    frontendUrl: string,
+  ): Promise<void> {
+    const LoginLink = `${frontendUrl}/reset-password?token=${token}`;
+    const subject = 'Création de votre mot de passe';
+    const html = `
+    <div style="font-family: Arial, sans-serif;">
+      <h2>Création de votre mot de passe</h2>
+      <p>Vous venez de vous inscrire à OBC.
+      Cliquez sur le lien ci-dessous pour définir votre mot de passe :
+      </p>
+      <a href="${LoginLink}">${LoginLink}</a>
+      <p>Ce lien expire dans 1 heure.</p>
+      <p>Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.</p>
+    </div>
+  `;
+    await this.transporter.sendMail({ to, subject, html });
+  }
+
+
   // email.service.ts
 async sendGuardianConfirmationEmail(
   to: string,

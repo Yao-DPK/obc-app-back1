@@ -1,18 +1,15 @@
 // src/types/payment.dto.ts
+import { paymentObligations } from '@/database/schema';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 // ============================================================
 // OBLIGATIONS
 // ============================================================
 
-export const CreateObligationSchema = z.object({
-  eventId: z.number().positive(),
-  playerIds: z.array(z.number().positive()).min(1),
-  totalAmount: z.number().positive(),
-  dueDate: z.string().datetime().optional(),
-});
-
-export type CreateObligationDto = z.infer<typeof CreateObligationSchema>;
+export const ObligationSelectSchema = createSelectSchema(paymentObligations);
+export const ObligationInsertSchema = createInsertSchema(paymentObligations);
+export type CreateObligationDto = z.infer<typeof ObligationInsertSchema>;
 
 // ============================================================
 // INTENTIONS DE PAIEMENT

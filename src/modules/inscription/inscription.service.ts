@@ -10,6 +10,7 @@ import { PlayerRepository } from '../user/player.repository';
 import { EmailService } from '../email/email.service';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '@nestjs/config';
+import { PaymentService } from '../payment/payment.service';
 
 
 
@@ -20,6 +21,7 @@ export class InscriptionService {
     private guardianRelationshipsRepo: GuardianRelationshipsRepository,
     private documentService: DocumentService,
     private playerRepository: PlayerRepository,
+    private paymentService: PaymentService,
     private emailService: EmailService,
     private authService: AuthService, 
     private configService: ConfigService,
@@ -162,15 +164,11 @@ export class InscriptionService {
       firstname: g.firstName || 'Garant'
     };
     
+
+    
     // 🆕 Générer un seul token pour tout
     const token = this.authService.generateGuardianToken(g.id, joueur.id);
     
-    // Stocker le token dans la base pour vérification ultérieure
-    /* WAS: await this.userRepository.update(g.id, {
-      confirmationToken: token,
-      tokenExpiry: (new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
-    });
- */
     await this.guardianRelationshipsRepo.update(g.relationId, {
       confirmationToken: token,
       tokenExpiresAt: (new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
@@ -190,11 +188,37 @@ export class InscriptionService {
     );
   }
 
+  console.log(`9`);
+  // 9. Ajout des paiements obligatoires à effectuer pour le joueur inscrit
+  let payment_obligations: any[] = [];
+  // 9.1 Récupération des évenements de paiement à ajouter.
+  // TODO : Faire une association entre évènement et type de paiement à effectuer; par exemple pour l'inscription, les paiements seront la mensualité et l'inscription annuelle
+  const monthly_payment = await this.paymentService.getEventByName('Mensualite');
+  const annual_payment = await this.paymentService.getEventByName('Inscription Annuelle');
+
+  // 9.2 Création des payments du joueurs
+  const monthly_obligation = await this.paymentService.createObligation({
+    eventId: monthly_payment.id, 
+    playerId: joueur.id, 
+    totalAmount: monthly_payment.amount, 
+  });
+  payment_obligations.push(monthly_obligation);
+  const annual_obligation = await this.paymentService.createObligation({
+    eventId: annual_payment.id, 
+    playerId: joueur.id, 
+    totalAmount: annual_payment.amount, 
+  });
+  payment_obligations.push(annual_obligation);
+
+  console.log(`10`);
+  // 10. Envoi du mail au joueur(si mail fourni) afin de pouvoir créer son mot de passe et faire sa première connexion.
+
   return { 
     joueur, 
     player: playerData, 
     guardiansCreated, 
     filesUploaded,
+    payment_obligations,
     message: 'Inscription enregistrée. Les garants vont recevoir un email de confirmation.'
   };
 }

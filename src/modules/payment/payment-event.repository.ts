@@ -30,6 +30,12 @@ export class PaymentEventRepository {
     return event || null;
   }
 
+  async findByName(name: string): Promise<EventSelect | null> {
+    const [event] = await db.select().from(paymentEvents).where(eq(paymentEvents.name, name));
+    return event || null;
+  }
+
+
   async update(id: number, data: Partial<EventInsert>): Promise<EventSelect> {
     const [updated] = await db
       .update(paymentEvents)

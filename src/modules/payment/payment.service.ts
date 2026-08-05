@@ -32,6 +32,12 @@ export class PaymentService {
     return event;
   }
 
+  async getEventByName(name: string) {
+    const event = await this.eventRepo.findByName(name);
+    if (!event) throw new NotFoundException('Événement non trouvé');
+    return event;
+  }
+
   async getAllEvents(includeInactive = false): Promise<PaymentEvent[]> {
     if (includeInactive) {
       return this.eventRepo.findAll();
@@ -57,7 +63,7 @@ export class PaymentService {
 
   // ========== OBLIGATIONS ==========
 
-  async createObligation(userId: number, dto: CreateObligationDto) {
+  async createObligation(dto: CreateObligationDto) {
     const event = await this.eventRepo.findById(dto.eventId);
     if (!event) throw new NotFoundException('Événement non trouvé');
 
@@ -67,12 +73,11 @@ export class PaymentService {
     }
 
     const obligation = await this.obligationRepo.create({
-      userId,
       eventId: dto.eventId,
-      playerIds: dto.playerIds,
-      totalAmount: dto.totalAmount.toString(),
+      playerId: dto.playerId,
+      totalAmount: dto.totalAmount,
       paidAmount: 0,
-      remainingAmount: dto.totalAmount.toString(),
+      remainingAmount: dto.totalAmount,
       dueDate: dto.dueDate ?( new Date(dto.dueDate) as unknown as string)  : (event.endDate as unknown as string),
       description: `Paiement pour ${event.name}`,
       status: 'pending',
@@ -81,14 +86,15 @@ export class PaymentService {
     return obligation;
   }
 
-  async getAllObligations() {
-  return this.obligationRepo.findAll(); // méthode à ajouter dans le repository
-  }
+  async getAllObligations(query: any) {
+  const obligations =  this.obligationRepo.findAll(query); // méthode à ajouter dans le repository
+  return obligations;
+}
 
 
 
-  async getObligationsByUser(userId: number) {
-    return this.obligationRepo.findByUserId(userId);
+  async getObligationsByUser(playerId: number) {
+    return this.obligationRepo.findByPlayerId(playerId);
   }
 
   async getObligationWithIntents(obligationId: number) {
@@ -103,9 +109,8 @@ export class PaymentService {
     };
   }
 
-    async getObligationsByPlayerIds(playerIds: number[]) {
-      if (!playerIds.length) return [];
-      return this.obligationRepo.findByPlayerIds(playerIds);
+    async getObligationsByPlayerId(playerId: number) {
+      return this.obligationRepo.findByPlayerId(playerId);
     }
 
     async updateObligationStatus(id: number, status: string) {
@@ -126,11 +131,6 @@ export class PaymentService {
     // Vérifier que l'obligation existe
     const obligation = await this.obligationRepo.findById(dto.obligationId);
     if (!obligation) throw new NotFoundException('Obligation non trouvée');
-
-    // Vérifier que l'utilisateur est bien le propriétaire
-    if (obligation.userId !== userId) {
-      throw new BadRequestException('Vous n\'êtes pas autorisé à payer cette obligation');
-    }
 
     // Vérifier que l'obligation n'est pas déjà totalement payée
     const remaining = Number(obligation.remainingAmount || 0);
@@ -237,8 +237,8 @@ export class PaymentService {
 
   // ========== STATISTIQUES / RÉCAPITULATIFS ==========
 
-  async getUserPaymentSummary(userId: number) {
-    const obligations = await this.obligationRepo.findByUserId(userId);
+  async getUserPaymentSummary(playerId: number) {
+    const obligations = await this.obligationRepo.findByPlayerId(playerId);
 
     const totalObligations = obligations.length;
     const totalAmount = obligations.reduce((sum, o) => sum + Number(o.totalAmount), 0);
@@ -281,9 +281,6 @@ export class PaymentService {
     const obligation = await this.obligationRepo.findById(obligationId);
     if (!obligation) throw new NotFoundException('Obligation non trouvée');
 
-    if (obligation.userId !== userId) {
-      throw new BadRequestException('Vous n\'êtes pas autorisé à annuler cette obligation');
-    }
 
     if (obligation.status === 'paid') {
       throw new BadRequestException('Une obligation déjà payée ne peut pas être annulée');

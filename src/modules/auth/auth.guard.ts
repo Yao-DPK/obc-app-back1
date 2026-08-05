@@ -30,7 +30,7 @@ export class AuthGuard implements CanActivate {
 
       return true;
     }
-    console.log('🔐 Guard - isPublic?', isPublic, 'path:', request.url);
+    console.log('🔵 AuthGuard - isPublic:', isPublic, 'path:', request.url);
 
     if (!token) {
       throw new UnauthorizedException();

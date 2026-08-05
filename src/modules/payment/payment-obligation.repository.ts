@@ -1,17 +1,106 @@
 import { Injectable } from '@nestjs/common';
-import { db, paymentObligations, eq, and, desc, sql, or } from '@/database/db';
+import { db, paymentObligations, eq, and, desc, sql, or,gte, lte, asc} from '@/database/db';
 import type { ObligationInsert, ObligationSelect } from '@/database/db';
+import {  SQL } from 'drizzle-orm';
+
+export type ObligationsFilters = {
+  id?: number;
+  eventId?: number;
+  playerId?: number;
+  totalAmount?: number;
+  paidAmount?: number;
+  dueDate?: Date | string;
+  status?: string;
+  createdFrom?: Date | string;
+  createdTo?: Date | string;
+  updatedFrom?: Date | string;
+  updatedTo?: Date | string;
+}
+
 
 @Injectable()
 export class PaymentObligationRepository {
+
+  // ========== CONSTRUCTEUR DE FILTRES ==========
+    private static buildObligationFilters(filters: ObligationsFilters): SQL | undefined {
+      const conditions: SQL[] = [];
+  
+      // 1. Exact matches
+      if (filters.id !== undefined) {
+        conditions.push(eq(paymentObligations.id, filters.id));
+      }
+      if (filters.eventId) {
+        conditions.push(eq(paymentObligations.eventId, filters.eventId));
+      }
+      if (filters.playerId) {
+        conditions.push(eq(paymentObligations.playerId, filters.playerId));
+      }
+
+      // 5. Plages de dates
+      if (filters.createdFrom) {
+        conditions.push(gte(paymentObligations.createdAt, new Date(filters.createdFrom)));
+      }
+      if (filters.createdTo) {
+        conditions.push(lte(paymentObligations.createdAt, new Date(filters.createdTo)));
+      }
+      if (filters.updatedFrom) {
+        conditions.push(gte(paymentObligations.updatedAt, new Date(filters.updatedFrom)));
+      }
+      if (filters.updatedTo) {
+        conditions.push(lte(paymentObligations.updatedAt, new Date(filters.updatedTo)));
+      }
+  
+      if (conditions.length === 0) return undefined;
+      return and(...conditions);
+    }
+    
+  async findMany(
+      filters?: ObligationsFilters,
+      options?: {
+        orderBy?: 'createdAt' | 'updatedAt';
+        order?: 'ASC' | 'DESC';
+        limit?: number;
+        offset?: number;
+      }
+    ){
+      const query = db.select().from(paymentObligations);
+
+      const whereClause = filters ? PaymentObligationRepository.buildObligationFilters(filters) : undefined;
+      if (whereClause) {
+        query.where(whereClause);
+      }
+
+      // Tri par défaut : createdAt ASC
+          const orderField = options?.orderBy || 'createdAt';
+          const orderDir = options?.order || 'ASC';
+          if(orderDir == 'DESC'){
+            query.orderBy(desc(paymentObligations[orderField]));
+          }
+          query.orderBy(asc(paymentObligations[orderField]));
+      
+          
+          if (options?.limit) query.limit(options.limit);
+          if (options?.offset) query.offset(options.offset);
+      
+          //console.log(`query result: ${JSON.stringify(await query)}`)
+          return await query;
+      
+    }
+
   async create(data: ObligationInsert): Promise<ObligationSelect> {
     const [obligation] = await db.insert(paymentObligations).values(data).returning();
     return obligation;
   }
 
-  async findAll(): Promise<ObligationSelect[] | null > {
-    const obligations = await db.select().from(paymentObligations);
-    return obligations || null;
+  async findAll(query: any): Promise<ObligationSelect[] | null > {
+    // On utilise findMany avec un filtre isActive seulement si on ne veut pas les inactifs
+    const filters = query.includeInactive ? query : { ...query, isActive: true };
+    //console.log(`findAll filters: ${JSON.stringify(filters)}`);
+
+    return this.findMany(filters, {
+      orderBy: 'createdAt',
+      order: 'ASC',
+    });
   }
 
   async findById(id: number): Promise<ObligationSelect | null> {
@@ -19,24 +108,11 @@ export class PaymentObligationRepository {
     return obligation || null;
   }
 
-   async findByUserId(userId: number): Promise<ObligationSelect[]> {
+   async findByPlayerId(playerId: number): Promise<ObligationSelect[]> {
     return db
         .select()
         .from(paymentObligations)
-        .where(eq(paymentObligations.userId, userId));
-    }
-
-    async findByPlayerIds(playerIds: number[]): Promise<ObligationSelect[]> {
-      if (!playerIds.length) return [];
-
-      // On filtre les obligations dont playerIds contient au moins un des IDs
-      const conditions = playerIds.map(id =>
-        sql`${paymentObligations.playerIds} @> ${JSON.stringify([id])}::jsonb`
-      );
-      return db
-        .select()
-        .from(paymentObligations)
-        .where(or(...conditions));
+        .where(eq(paymentObligations.playerId, playerId));
     }
 
   async findByEvent(eventId: number): Promise<ObligationSelect[]> {
@@ -74,7 +150,7 @@ export class PaymentObligationRepository {
     const status = newPaid >= Number(obligation.totalAmount) ? 'paid' : 'partial';
     return this.update(id, {
       paidAmount: newPaid,
-      remainingAmount: remaining.toString(),
+      remainingAmount: remaining,
       status,
     });
   }

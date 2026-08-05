@@ -28,6 +28,7 @@ export {
   ilike,
   inArray,
   not,
+  isNull
   
 } from 'drizzle-orm'; // Exports utilisés par les autres packages
 export { drizzle } from 'drizzle-orm/node-postgres';

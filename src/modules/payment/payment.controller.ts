@@ -26,6 +26,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
+import { Public } from '../common/decorators/public.decorator';
 
 @Controller('payments')
 @UseGuards(RolesGuard)
@@ -59,13 +60,7 @@ export class PaymentController {
     @GetUser('id') userId: number,
     @Body() dto: CreateObligationDto,
   ) {
-    return this.paymentService.createObligation(userId, dto);
-  }
-
-  @Get('obligations')
-  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
-  async getMyObligations(@GetUser('id') userId: number) {
-    return this.paymentService.getObligationsByUser(userId);
+    return this.paymentService.createObligation(dto);
   }
 
   @Get('obligations/:id')
@@ -85,16 +80,16 @@ export class PaymentController {
   }
 
   @Get('obligations')
+  @Public()
   @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
   async getObligations(
     @GetUser('id') userId: number,
-    @Query('playerIds') playerIds?: string,
+    @Query() query: any
   ) {
-    if (playerIds) {
-      const ids = playerIds.split(',').map(id => parseInt(id));
-      return this.paymentService.getObligationsByPlayerIds(ids);
-    }
-    return this.paymentService.getObligationsByUser(userId);
+    console.log(`Getting obligations `);
+    const obligations = this.paymentService.getAllObligations(query);
+    console.log(`obligations: ${JSON.stringify(obligations)}`);
+    return obligations;
   }
 
   @Patch('obligations/:id/status')
@@ -169,9 +164,9 @@ export class PaymentController {
 
   @Get('admin/obligations')
   @AdminOnly()
-  async getAllObligations() {
+  async getAllObligations(@Query() query: any) {
     // Méthode à ajouter dans le service (non inclus, à implémenter)
-    return this.paymentService.getAllObligations();
+    return this.paymentService.getAllObligations(query);
   }
 
   @Get('admin/intents')
