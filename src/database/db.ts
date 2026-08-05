@@ -14,6 +14,12 @@ const pool = new Pool({
       : process.env.DATABASE_REMOTE_URL!,
 });
 
+
+pool.on('error', (err) => {
+  console.error('🔴 Pool error:', err);
+});
+
+
 export {
   eq,
   and,
@@ -33,5 +39,5 @@ export {
 } from 'drizzle-orm'; // Exports utilisés par les autres packages
 export { drizzle } from 'drizzle-orm/node-postgres';
 
-export const db = drizzle(pool, { schema });
+export const db = drizzle(pool, { schema, logger: true });
 export * from './schema';

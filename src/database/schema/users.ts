@@ -19,8 +19,8 @@ export const users = pgTable('users', {
     .$type<'parent' | 'player' | 'admin' | 'super_admin'>()
     .default('parent')
     .notNull(),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
+  firstName: varchar('first_name', { length: 100 }).notNull().default(''),
+  lastName: varchar('last_name', { length: 100 }).notNull().default(''),
   gender: varchar('gender', { length: 10 }),
   phone: varchar('phone', { length: 20 }),
   address: text('address'),
