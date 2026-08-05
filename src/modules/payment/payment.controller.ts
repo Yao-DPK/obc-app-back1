@@ -18,6 +18,7 @@ import type {
   CreateIntentDto,
   CreateObligationDto,
   CreatePaymentEventDto,
+  PaymentObligation,
   UpdatePaymentEventDto,
   VerifyPaymentDto,
 } from './payment.dto';
@@ -80,26 +81,27 @@ export class PaymentController {
   }
 
   @Get('obligations')
+  //@Roles(Role.Parent, Role.Admin, Role.Super_Admin)
   @Public()
-  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
   async getObligations(
     @GetUser('id') userId: number,
     @Query() query: any
   ) {
     console.log(`Getting obligations `);
     const obligations = this.paymentService.getAllObligations(query);
-    console.log(`obligations: ${JSON.stringify(obligations)}`);
+    //console.log(`obligations: ${JSON.stringify(obligations)}`);
     return obligations;
   }
 
-  @Patch('obligations/:id/status')
+  @Patch('obligations/:id')
   @AdminOnly()
   @HttpCode(HttpStatus.OK)
-  async updateObligationStatus(
+  async updateObligation(
     @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: string,
+    @Body() data: any,
   ) {
-    return this.paymentService.updateObligationStatus(id, status);
+    
+    return this.paymentService.updateObligation(id, data.obligation);
   }
 
   // ============================================================

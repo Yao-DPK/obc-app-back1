@@ -130,6 +130,7 @@ export class PaymentObligationRepository {
   }
 
   async update(id: number, data: Partial<ObligationInsert>): Promise<ObligationSelect | null> {
+
     const [updated] = await db
       .update(paymentObligations)
       .set({ ...data, updatedAt: new Date() })

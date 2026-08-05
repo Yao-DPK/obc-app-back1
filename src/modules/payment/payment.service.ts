@@ -10,6 +10,7 @@ import {
   PaymentEvent,
   CreatePaymentEventDto,
   UpdatePaymentEventDto,
+  PaymentObligation,
 } from './payment.dto';
 
 @Injectable()
@@ -113,16 +114,11 @@ export class PaymentService {
       return this.obligationRepo.findByPlayerId(playerId);
     }
 
-    async updateObligationStatus(id: number, status: string) {
+    async updateObligation(id: number, data: CreateObligationDto) {
     const obligation = await this.obligationRepo.findById(id);
     if (!obligation) throw new NotFoundException('Obligation non trouvée');
-
-    const validStatus = ['pending', 'paid', 'overdue', 'cancelled', 'partial'];
-    if (!validStatus.includes(status)) {
-      throw new BadRequestException('Statut invalide');
-    }
-
-    return this.obligationRepo.update(id, { status });
+    const updated = this.obligationRepo.update(id, data);
+    return updated;
   }
 
   // ========== INTENTIONS ==========
@@ -139,7 +135,7 @@ export class PaymentService {
     }
 
     // Vérifier que le montant ne dépasse pas le reste à payer
-    if (dto.amount > remaining) {
+    if (Number(dto.amount) > remaining) {
       throw new BadRequestException(
         `Le montant (${dto.amount}) dépasse le reste à payer (${remaining})`
       );

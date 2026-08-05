@@ -1,5 +1,5 @@
 // src/types/payment.dto.ts
-import { paymentObligations } from '@/database/schema';
+import { paymentIntents, paymentObligations } from '@/database/schema';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -15,19 +15,7 @@ export type CreateObligationDto = z.infer<typeof ObligationInsertSchema>;
 // INTENTIONS DE PAIEMENT
 // ============================================================
 
-export const CreateIntentSchema = z.object({
-  obligationId: z.number().positive(),
-  amount: z.number().positive(),
-  method: z.enum(['momo', 'card']),
-  transactionReference: z.string().optional(),
-  transactionMetadata: z
-    .object({
-      phone: z.string().optional(),
-      cart_id: z.string(),
-      custom_field: z.string(),
-    })
-    .optional(),
-});
+export const CreateIntentSchema = createInsertSchema(paymentIntents);
 
 export type CreateIntentDto = z.infer<typeof CreateIntentSchema>;
 
@@ -80,7 +68,7 @@ export type PaymentObligation = {
   id: number;
   userId: number;
   eventId: number;
-  playerIds: number[];
+  playerId: number;
   totalAmount: number;
   paidAmount: number;
   remainingAmount: number;
