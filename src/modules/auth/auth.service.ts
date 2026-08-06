@@ -161,8 +161,7 @@ export class AuthService {
     }
 
     // Bug corrigé : le mot de passe doit être hashé avant stockage
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await this.userService.setFirstPassword(user.id, hashedPassword);
+    await this.userService.setPassword(user.id, newPassword);
 
     // Un changement de mot de passe invalide toutes les sessions existantes
     await db.delete(refreshTokens).where(eq(refreshTokens.userId, user.id));
@@ -376,8 +375,7 @@ export class AuthService {
         throw new BadRequestException('Le mot de passe doit contenir au moins 8 caractères');
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await this.userService.setFirstPassword(guardian.id, hashedPassword);
+      await this.userService.setPassword(guardian.id, password);
       await this.userService.updateRegistrationStatus(guardian.id, 'parent_actif');
       await this.userService.updateVerificationStatus(guardian.id, true);
     } else if (guardian.registrationStatus !== 'parent_actif') {

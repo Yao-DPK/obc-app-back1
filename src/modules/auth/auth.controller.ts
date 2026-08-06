@@ -115,13 +115,14 @@ export class AuthController {
       'password_reset',
     );
 
-    return { valid: !!record };
+    return { valid: !!record, email: record?.email };
   }
 
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    console.log(`received data: ${JSON.stringify(resetPasswordDto)}`);
     await this.authService.verifyResetPasswordToken(
       resetPasswordDto.token,
       resetPasswordDto.newPassword,

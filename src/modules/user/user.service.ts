@@ -186,7 +186,7 @@ export class UserService {
     return { success: true };
   }
 
-  async setFirstPassword(
+  async setPassword(
     userId: number,
     newPassword: string,
   ): Promise<{ success: true }> {

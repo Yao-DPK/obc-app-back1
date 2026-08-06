@@ -6,7 +6,7 @@ import {  SQL } from 'drizzle-orm';
 export type ObligationsFilters = {
   id?: number;
   eventId?: number;
-  playerId?: number;
+  playerIds?: number[];
   totalAmount?: number;
   paidAmount?: number;
   dueDate?: Date | string;
@@ -32,8 +32,11 @@ export class PaymentObligationRepository {
       if (filters.eventId) {
         conditions.push(eq(paymentObligations.eventId, filters.eventId));
       }
-      if (filters.playerId) {
-        conditions.push(eq(paymentObligations.playerId, filters.playerId));
+      if (filters.playerIds) {
+        filters.playerIds.map((id) => {
+          conditions.push(eq(paymentObligations.playerId, id));
+        })
+        
       }
 
       // 5. Plages de dates
