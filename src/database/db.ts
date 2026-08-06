@@ -15,17 +15,10 @@ const pool = new Pool({
 });
 
 
-<<<<<<< HEAD
-pool.on('error', (err) => {
-  console.error('🔴 Pool error:', err);
-});
-
-=======
 /* pool.on('error', (err) => {
   console.error('🔴 Pool error:', err);
 });
  */
->>>>>>> a7590b1 (Fixed reset password)
 
 export {
   eq,
@@ -46,11 +39,7 @@ export {
 } from 'drizzle-orm'; // Exports utilisés par les autres packages
 export { drizzle } from 'drizzle-orm/node-postgres';
 
-<<<<<<< HEAD
-export const db = drizzle(pool, { schema, logger: true });
-=======
 export const db = drizzle(pool, { schema, /* logger: true */ }); //
->>>>>>> a7590b1 (Fixed reset password)
 export * from './schema';
 
 //Décommenter le lignes 18 et 42 pour aider à trouver les erreurs db
