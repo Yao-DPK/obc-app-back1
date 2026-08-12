@@ -1,5 +1,4 @@
 import { users } from '@/database/db';
-import { IsEmail, IsString, MinLength, IsIn } from 'class-validator';
 import { createInsertSchema } from 'drizzle-zod';
 import z from 'zod';
 

@@ -212,7 +212,8 @@ export class InscriptionService {
 
   console.log(`10`);
   // 10. Envoi du mail au joueur(si mail fourni) afin de pouvoir créer son mot de passe et faire sa première connexion.
-
+  await this.authService.firstLogin(joueur.id);
+  
   return { 
     joueur, 
     player: playerData, 

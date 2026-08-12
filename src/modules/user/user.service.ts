@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from './user.repository';
 import { PlayerRepository } from './player.repository';
-import { PlayerSelect, UserSelect } from '../../database/db';
+import { PlayerSelect, UserInsert, UserSelect } from '../../database/db';
 import { UpdateProfileDto } from './dto/user.dto';
 import { GuardianService } from '../guardian/guardian.service';
 import { use } from 'passport';
@@ -117,7 +117,12 @@ export class UserService {
     
   }
 
-  
+  // ========== ECRITURE ==========
+
+  async create(data: UserInsert): Promise<UserSelect>{
+    const new_user = await this.userRepository.create(data);
+    return new_user;
+  }
 
   // ========== MISE À JOUR ==========
 

@@ -25,6 +25,9 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/resert-password.dto';
 import { UserService } from '../user/user.service';
 import { GetUser } from '../common/decorators/get-user.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Role } from '../common/enums/role.enum';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -42,19 +45,7 @@ export class AuthController {
     return { message: 'Code de vérification envoyé par email' };
   }
 
-  @Get('profile')
-  async getProfile(@GetUser() user: any) {
-    return this.userService.findById(user.sub);
-  }
-
-  @Public()
-  @Post('verify-email')
-  async verifyEmail(@Body('email') email: string, @Body('code') code: string) {
-    if (!email || !code) throw new BadRequestException('Email et code requis');
-    this.otpService.verifyEmailOtp(email, code);
-    return { message: 'Email vérifié avec succès' };
-  }
-
+  
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -105,14 +96,14 @@ export class AuthController {
 
   @Public()
   @Get('verify-reset-token')
-  async verifyResetToken(@Query('token') token: string) {
+  async verifyResetToken(@Query('token') token: string, @Query('purpose') purpose: "email_confirmation" | "password_reset" | "first_login" | "invite") {
     if (!token) {
       throw new BadRequestException('Token manquant');
     }
 
     const record = await this.authService.peekVerificationToken(
       token,
-      'password_reset',
+      purpose,
     );
 
     return { valid: !!record, email: record?.email };
@@ -126,6 +117,7 @@ export class AuthController {
     await this.authService.verifyResetPasswordToken(
       resetPasswordDto.token,
       resetPasswordDto.newPassword,
+      'password_reset'
     );
     return { message: 'Mot de passe modifié avec succès.' };
   }

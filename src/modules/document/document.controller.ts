@@ -102,7 +102,8 @@ export class DocumentController {
     @Query('playerIds') playerIds?: string,
   ) {
     if (userId) {
-      return this.documentService.getDocumentsByUser(parseInt(userId));
+      const documents = await this.documentService.getDocumentsByUser(parseInt(userId));
+      return documents;
     }
     if (playerIds) {
       const ids = playerIds.split(',').map(id => parseInt(id));

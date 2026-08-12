@@ -18,16 +18,58 @@ import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { UserRepository } from './user.repository';
+import { Public } from '../common/decorators/public.decorator';
+import { AllRoles } from '../common/decorators/all-roles.decorator';
+import { type UpdateProfileDto } from './dto/user.dto';
+
 
 
 
 @Controller('users')
-@UseGuards(RolesGuard)
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private userRepository: UserRepository,
   ) {}
+
+  // ========== AUTHENTIFIED USER (profil) ==========
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.Super_Admin, Role.Admin, Role.Parent, Role.Player)
+  @Get('me')
+  async getProfile(@GetUser() user: any) {
+    console.log(`user: ${JSON.stringify(user)}`);
+    return this.userService.findById(user.sub);
+  }
+
+
+  @Get('me/players')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Parent, Role.Player, Role.Admin, Role.Super_Admin)
+  async getMyPlayers(
+    @GetUser() authuser: any,     
+  ){
+    return this.userService.getPlayersByGuardian(authuser.sub);
+  }
+
+  @Get('me/guardians')
+  @Roles(Role.Player)
+  async getMyGuardians(
+    @GetUser() authuser: any,     
+  ){
+    return this.userService.getGuardiansByPlayer(authuser.sub);
+  }
+
+  @Patch('me')
+  @AllRoles()
+  async updateProfile(
+    @GetUser() authuser: any, 
+    @Body() input: UpdateProfileDto
+  ) {
+    return this.userService.updateProfile(authuser.sub, input);
+  }
+
+
 
   // ========== ADMIN / SUPER_ADMIN ==========
 
@@ -43,6 +85,19 @@ export class UserController {
     if (ids.length > 100) throw new BadRequestException('Trop d\'IDs (max 100)');
     
     return this.userRepository.findByIds(ids);
+  }
+
+  
+  @Get('guardian/:guardianId/players')
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getPlayersByGuardian(@Param('guardianId') guardianId: string) {
+    return this.userService.getPlayersByGuardian(parseInt(guardianId, 10));
+  }
+
+  @Get('players/:playerId/guardians')
+  @Roles(Role.Admin, Role.Super_Admin)
+  async getGuardiansByPlayer(@Param('playerId') playerId: string) {
+    return this.userService.getGuardiansByPlayer(parseInt(playerId, 10));
   }
 
   @Get(':role')
@@ -94,13 +149,12 @@ export class UserController {
     const id = parseInt(userId, 10);
     await this.userRepository.update(id, { registrationStatus: 'rejeté' });
     return { message: 'Inscription rejetée' };
-  }
+  }z
 
   // ========== AUTHENTIFIED USER (profil) ==========
 
-
   @Get(':userId')
-  
+  @UseGuards(RolesGuard)
   @Roles(Role.Parent, Role.Player, Role.Admin, Role.Super_Admin)
   async getUser(
     @GetUser() authUser: any,
@@ -118,42 +172,11 @@ export class UserController {
     return this.userService.findById(targetId);
   }
 
-  @Get('me/players')
-  @Roles(Role.Parent)
-  async getMyPlayers(
-    @GetUser() authuser: any,     
-  ){
-    return this.userService.getPlayersByGuardian(authuser.sub);
-  }
-
-  @Get('me/guardians')
-  @Roles(Role.Player)
-  async getMyGuardians(
-    @GetUser() authuser: any,     
-  ){
-    return this.userService.getGuardiansByPlayer(authuser.sub);
-  }
-
-
-  @Get('guardian/:guardianId/players')
-  @Roles(Role.Admin, Role.Super_Admin)
-  async getPlayersByGuardian(@Param('guardianId') guardianId: string) {
-    return this.userService.getPlayersByGuardian(parseInt(guardianId, 10));
-  }
-
-  @Get('players/:playerId/guardians')
-  @Roles(Role.Admin, Role.Super_Admin)
-  async getGuardiansByPlayer(@Param('playerId') playerId: string) {
-    return this.userService.getGuardiansByPlayer(parseInt(playerId, 10));
-  }
-
-
-
   // ========== MISE À JOUR ==========
 
   @Patch(':userId')
   @HttpCode(HttpStatus.OK)
-  async updateProfile(@Param('userId') userId: string, @Body() input: any) {
+  async updateUser(@Param('userId') userId: string, @Body() input: any) {
     return this.userService.updateProfile(parseInt(userId, 10), input);
   }
 

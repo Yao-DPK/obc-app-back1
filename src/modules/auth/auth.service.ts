@@ -37,7 +37,7 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  private generateAccessToken(
+  generateAccessToken(
     userId: number,
     role: string,
     email: string,
@@ -145,8 +145,8 @@ export class AuthService {
     await this.emailService.sendPasswordResetEmail(email, rawToken, frontendUrl);
   }
 
-  async verifyResetPasswordToken(rawToken: string, newPassword: string): Promise<void> {
-    const record = await this.consumeVerificationToken(rawToken, 'password_reset');
+  async verifyResetPasswordToken(rawToken: string, newPassword: string, tokenType: VerificationTokenType): Promise<void> {
+    const record = await this.consumeVerificationToken(rawToken, tokenType);
     if (!record) {
       throw new BadRequestException('Token invalide ou expiré');
     }
@@ -160,7 +160,6 @@ export class AuthService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    // Bug corrigé : le mot de passe doit être hashé avant stockage
     await this.userService.setPassword(user.id, newPassword);
 
     // Un changement de mot de passe invalide toutes les sessions existantes
@@ -405,10 +404,10 @@ export class AuthService {
     });
   }
 
-  private async generateRefreshToken(
+   async generateRefreshToken(
     userId: number,
-    res: Response,
     familyId: string,
+    res?: Response,
     context?: { userAgent?: string; ipAddress?: string },
   ) {
     const rawToken = generateRawToken();
@@ -425,7 +424,10 @@ export class AuthService {
       ipAddress: context?.ipAddress,
     });
 
-    this.setRefreshCookie(res, rawToken);
+    if(res){
+      this.setRefreshCookie(res, rawToken);
+    }
+    
   }
 
   async login(
@@ -454,7 +456,7 @@ export class AuthService {
     // Un login = nouvelle session -> nouvelle famille de refresh tokens.
     // Comportement actuel : mono-session (on ferme les anciennes).
     await db.delete(refreshTokens).where(eq(refreshTokens.userId, user.id));
-    await this.generateRefreshToken(user.id, res, randomUUID(), context);
+    await this.generateRefreshToken(user.id, randomUUID(), res, context);
 
     return {
       user: safeUser,
