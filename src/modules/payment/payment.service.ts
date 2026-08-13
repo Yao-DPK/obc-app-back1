@@ -88,10 +88,28 @@ export class PaymentService {
   }
 
   async getAllObligations(query: any) {
-  const obligations =  this.obligationRepo.findAll(query); // méthode à ajouter dans le repository
-  return obligations;
-}
+    const obligations = await this.obligationRepo.findAll(query);
+    //console.log(`🔹 Obligations récupérées : ${obligations!.length}`);
 
+    // 1. Récupérer tous les IDs d'événements en une seule fois
+    const eventIds = obligations!.map(ob => ob.eventId).filter(id => id !== undefined);
+    
+    // 2. Récupérer tous les événements en une seule requête
+    let eventsMap = new Map<number, string>();
+    if (eventIds.length > 0) {
+      const events = await this.eventRepo.findByIds(eventIds); // méthode à ajouter
+      eventsMap = new Map(events.map(e => [e.id, e.name]));
+    }
+
+    // 3. Mapper les obligations avec le nom de l'événement
+    const namedObligations = obligations!.map(ob => ({
+      ...ob,
+      name: eventsMap.get(ob.eventId) || null,
+    }));
+
+    //console.log(`🔹 Named obligations : ${JSON.stringify(namedObligations)}`);
+    return namedObligations;
+  }
 
 
   async getObligationsByUser(playerId: number) {

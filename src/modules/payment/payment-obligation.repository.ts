@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { db, paymentObligations, eq, and, desc, sql, or,gte, lte, asc} from '@/database/db';
 import type { ObligationInsert, ObligationSelect } from '@/database/db';
-import {  SQL } from 'drizzle-orm';
+import {  inArray, SQL } from 'drizzle-orm';
 
 export type ObligationsFilters = {
   id?: number;
@@ -22,40 +22,49 @@ export type ObligationsFilters = {
 export class PaymentObligationRepository {
 
   // ========== CONSTRUCTEUR DE FILTRES ==========
-    private static buildObligationFilters(filters: ObligationsFilters): SQL | undefined {
-      const conditions: SQL[] = [];
-  
-      // 1. Exact matches
-      if (filters.id !== undefined) {
-        conditions.push(eq(paymentObligations.id, filters.id));
-      }
-      if (filters.eventId) {
-        conditions.push(eq(paymentObligations.eventId, filters.eventId));
-      }
-      if (filters.playerIds) {
-        filters.playerIds.map((id) => {
-          conditions.push(eq(paymentObligations.playerId, id));
-        })
-        
-      }
+  private static buildObligationFilters(filters: ObligationsFilters): SQL | undefined {
+    const conditions: SQL[] = [];
 
-      // 5. Plages de dates
-      if (filters.createdFrom) {
-        conditions.push(gte(paymentObligations.createdAt, new Date(filters.createdFrom)));
-      }
-      if (filters.createdTo) {
-        conditions.push(lte(paymentObligations.createdAt, new Date(filters.createdTo)));
-      }
-      if (filters.updatedFrom) {
-        conditions.push(gte(paymentObligations.updatedAt, new Date(filters.updatedFrom)));
-      }
-      if (filters.updatedTo) {
-        conditions.push(lte(paymentObligations.updatedAt, new Date(filters.updatedTo)));
-      }
-  
-      if (conditions.length === 0) return undefined;
-      return and(...conditions);
+    // 1. ID exact
+    if (filters.id !== undefined) {
+      conditions.push(eq(paymentObligations.id, filters.id));
     }
+
+    // 2. Event ID
+    if (filters.eventId) {
+      conditions.push(eq(paymentObligations.eventId, filters.eventId));
+    }
+
+    // 3. Player IDs (liste)
+    if (filters.playerIds) {
+      const ids = Array.isArray(filters.playerIds) ? filters.playerIds : [filters.playerIds];
+      if (ids.length > 0) {
+        conditions.push(inArray(paymentObligations.playerId, ids));
+      }
+    }
+
+    // 4. Statut
+    if (filters.status) {
+      conditions.push(eq(paymentObligations.status, filters.status));
+    }
+
+    // 5. Plages de dates
+    if (filters.createdFrom) {
+      conditions.push(gte(paymentObligations.createdAt, new Date(filters.createdFrom)));
+    }
+    if (filters.createdTo) {
+      conditions.push(lte(paymentObligations.createdAt, new Date(filters.createdTo)));
+    }
+    if (filters.updatedFrom) {
+      conditions.push(gte(paymentObligations.updatedAt, new Date(filters.updatedFrom)));
+    }
+    if (filters.updatedTo) {
+      conditions.push(lte(paymentObligations.updatedAt, new Date(filters.updatedTo)));
+    }
+
+    if (conditions.length === 0) return undefined;
+    return and(...conditions);
+  }
     
   async findMany(
       filters?: ObligationsFilters,

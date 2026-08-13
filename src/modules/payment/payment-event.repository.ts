@@ -1,4 +1,4 @@
-import { db, eq, desc } from '@/database/db';
+import { db, eq, desc, inArray } from '@/database/db';
 import { EventInsert, EventSelect, paymentEvents } from '@/database/schema';
 import { Injectable } from '@nestjs/common';
 
@@ -29,6 +29,11 @@ export class PaymentEventRepository {
     const [event] = await db.select().from(paymentEvents).where(eq(paymentEvents.id, id));
     return event || null;
   }
+
+  async findByIds(ids: number[]): Promise<EventSelect[]> {
+  if (!ids.length) return [];
+  return await db.select().from(paymentEvents).where(inArray(paymentEvents.id, ids));
+}
 
   async findByName(name: string): Promise<EventSelect | null> {
     const [event] = await db.select().from(paymentEvents).where(eq(paymentEvents.name, name));

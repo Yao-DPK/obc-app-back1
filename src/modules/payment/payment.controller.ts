@@ -28,6 +28,7 @@ import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { AllRoles } from '../common/decorators/all-roles.decorator';
 
 @Controller('payments')
 @UseGuards(RolesGuard)
@@ -87,14 +88,13 @@ export class PaymentController {
     @GetUser('id') userId: number,
     @Query() query: any
   ) {
-    console.log(`Getting obligations `);
-    const obligations = this.paymentService.getAllObligations(query);
-    //console.log(`obligations: ${JSON.stringify(obligations)}`);
+    //console.log(`Getting obligations `);
+    const obligations = await this.paymentService.getAllObligations(query);
     return obligations;
   }
 
   @Patch('obligations/:id')
-  @AdminOnly()
+  @AllRoles()
   @HttpCode(HttpStatus.OK)
   async updateObligation(
     @Param('id', ParseIntPipe) id: number,
@@ -168,7 +168,9 @@ export class PaymentController {
   @AdminOnly()
   async getAllObligations(@Query() query: any) {
     // Méthode à ajouter dans le service (non inclus, à implémenter)
-    return this.paymentService.getAllObligations(query);
+    const obligations =  this.paymentService.getAllObligations(query);
+    console.log(`requested Obligations: ${obligations}`);
+    return obligations;
   }
 
   @Get('admin/intents')
