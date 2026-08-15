@@ -26,6 +26,7 @@ export type DocumentFilters = {
   id?: number;
   userId?: number;
   typeId?: number;
+  type?: string;
   documentStatus?: string | string[]; // Allows single status or multiple (e.g., ['Validé', 'En attente'])
   isObligatory?: boolean;
   validatedBy?: number;
@@ -51,6 +52,9 @@ export class DocumentRepository {
     }
     if (filters.typeId !== undefined) {
       conditions.push(eq(documents.typeId, filters.typeId));
+    }
+    if (filters.type !== undefined) {
+      conditions.push(eq(documents.type, filters.type));
     }
     if (filters.isObligatory !== undefined) {
       conditions.push(eq(documents.isObligatory, filters.isObligatory));
@@ -114,6 +118,18 @@ export class DocumentRepository {
     }
     
     return await query;
+  }
+
+  async findOne(filters?: DocumentFilters): Promise<DocumentSelect | null> {
+    const whereClause = filters ? DocumentRepository.buildFilters(filters) : undefined;
+    const query = db.select().from(documents);
+    
+    if (whereClause) {
+      query.where(whereClause);
+    }
+    
+    const [result] = await query.limit(1);
+    return result || null;
   }
 
   // --- UPDATED: Use the new findMany for cleaner code ---

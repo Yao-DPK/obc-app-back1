@@ -13,6 +13,8 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuditMiddleware } from './modules/common/middleware/audit.middleware';
 import { EmailModule } from './modules/email/email.module';
 import { OtpModule } from './modules/otp/otp.module';
+import { S3Service } from './modules/s3/s3.service';
+import { S3Module } from './modules/s3/s3.module';
 
 @Module({
   imports: [
@@ -29,9 +31,10 @@ import { OtpModule } from './modules/otp/otp.module';
     InscriptionModule,
     EmailModule,
     OtpModule,
+    S3Module,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, S3Service],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

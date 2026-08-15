@@ -39,7 +39,7 @@ export class UserController {
   @Get('me')
   async getProfile(@GetUser() user: any) {
     console.log(`user: ${JSON.stringify(user)}`);
-    return this.userService.findById(user.sub);
+    return this.userService.findById(user.id);
   }
 
 
@@ -49,7 +49,7 @@ export class UserController {
   async getMyPlayers(
     @GetUser() authuser: any,     
   ){
-    return this.userService.getPlayersByGuardian(authuser.sub);
+    return this.userService.getPlayersByGuardian(authuser.id);
   }
 
   @Get('me/guardians')
@@ -57,7 +57,7 @@ export class UserController {
   async getMyGuardians(
     @GetUser() authuser: any,     
   ){
-    return this.userService.getGuardiansByPlayer(authuser.sub);
+    return this.userService.getGuardiansByPlayer(authuser.id);
   }
 
   @Patch('me')
@@ -66,7 +66,7 @@ export class UserController {
     @GetUser() authuser: any, 
     @Body() input: UpdateProfileDto
   ) {
-    return this.userService.updateProfile(authuser.sub, input);
+    return this.userService.updateProfile(authuser.id, input);
   }
 
 

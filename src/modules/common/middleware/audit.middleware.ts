@@ -10,7 +10,7 @@ export class AuditMiddleware implements NestMiddleware {
     res.send = function (body) {
       // Ne logguer que certaines méthodes (POST, PUT, PATCH, DELETE)
       if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-        const userId = (req as any).user?.sub || null;
+        const userId = (req as any).user?.id || null;
         db.insert(auditLogs)
           .values({
             userId,

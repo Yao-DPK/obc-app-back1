@@ -14,11 +14,12 @@ import {
   UseGuards,
   Query,
   Delete,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { DocumentService } from './document.service';
 import type { Request } from 'express';
-import { z } from 'zod';
-import { CreateDocumentSchema, RequestDocumentSchema, ValidateDocumentSchema } from './document.dto';
+import { RequestDocumentSchema, ValidateDocumentSchema } from './document.dto';
 import { parseMultipart } from '../common/utils/multipart-parser';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -26,6 +27,7 @@ import { Role } from '../common/enums/role.enum';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import type { DocumentTypeInsert } from '@/database/schema';
 import { Public } from '../common/decorators/public.decorator';
+import { GetUser } from '../common/decorators/get-user.decorator';
 
 
 @Controller('documents')
@@ -33,12 +35,6 @@ export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() input: z.infer<typeof CreateDocumentSchema>) {
-    return this.documentService.create(input);
-  }
-
-  @Post('upload')
   async fileUpload(@Req() req: Request){
     console.log('🔵 Uploading Files');
     
@@ -78,6 +74,7 @@ export class DocumentController {
     let data;
     try {
       data = JSON.parse(dataStr);
+      console.log(`data : ${JSON.stringify(data)}`);
       console.log('✅ JSON parsed successfully');
     } catch (err) {
       console.error('❌ JSON parse error:', err);
@@ -92,6 +89,24 @@ export class DocumentController {
       request_files
     )
     
+  }
+
+  @Get('/:id/signed-url')
+  @Roles(Role.Parent, Role.Player, Role.Admin)
+  async getSignedDocumentUrl(
+    @Param('id') id: string,
+    @GetUser() user: any,
+  ) {
+    console.log('Getting signed Url');
+    const document = await this.documentService.find({id: Number(id)});
+    if (!document) throw new NotFoundException("You can't find me");
+    // Vérifier que l'utilisateur a le droit de voir ce document
+    if (document.userId !== user.id && !['admin', 'super_admin'].includes(user.role)) {
+      throw new UnauthorizedException("You can't see me");
+    }
+
+    const signedUrl = await this.documentService.getSignedUrl(document.fileId);
+    return { signedUrl };
   }
 
   @Get()
@@ -154,6 +169,20 @@ export class DocumentController {
   async areAllDocumentsValid(@Param('userId', ParseIntPipe) userId: number) {
     const isValid = await this.documentService.areAllDocumentsValid(userId);
     return { userId, allValid: isValid };
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Parent, Role.Player, Role.Admin, Role.Super_Admin)
+  async deleteDocument(
+    @Param('id') id: string,
+    @GetUser() user: any,
+  ) {
+    await this.documentService.deleteDocument(
+      Number(id),
+      user.id,        // ✅ ID fiable (JWT)
+    );
+    return { message: 'Document supprimé' };
   }
 
   // ========== TYPES DE DOCUMENTS (Admin Only) ==========

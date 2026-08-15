@@ -43,7 +43,7 @@ export class AuthService {
     email: string,
     phone?: string,
   ) {
-    const payload = { sub: userId, role, email, phone };
+    const payload = { id: userId, role, email, phone };
     return this.jwtService.sign(payload, {
       secret: jwtConstants.secret,
       expiresIn: '15m',

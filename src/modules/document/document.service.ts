@@ -1,19 +1,20 @@
 // apps/api/src/modules/documents/documents.service.ts
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import type { CreateDocumentDto, ValidateDocumentDto } from './document.dto';
-import { DocumentRepository } from './document.repository';
+import { DocumentFilters, DocumentRepository } from './document.repository';
 import { z } from 'zod';
 import { GoogleDriveService } from '../google-drive/google-drive.service';
 import { DocumentTypeRepository } from './documentTypeRepository';
 import { DocumentInsert, DocumentTypeInsert } from '@/database/db';
+import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class DocumentService {
   constructor(
     private documentRepository: DocumentRepository,
     private googleDriveService: GoogleDriveService,
-    private docTypeRepo: DocumentTypeRepository
-
+    private docTypeRepo: DocumentTypeRepository,
+    private s3Service: S3Service
   ) {}
 
   
@@ -32,17 +33,7 @@ export class DocumentService {
     let filesUploaded: any[] = [];
     for (let idx = 0; idx < files.length; idx++) {
       const f = files[idx];
-      const uploaded_file = await this.fileUpload(f);
-      console.log(`filetype : ${f.filetype}`);
-      const docType = await this.getDocumentTypeByName(f.filetype);      
-      let document_created = await this.create({
-        userId: userId,
-        type: f.filetype,
-        typeId: docType.id,
-        fileId: uploaded_file.fileId,
-        publicUrl: uploaded_file.fileUrl,
-        isObligatory: true,
-      });
+      let document_created = await this.userFileupload(userId, f);
       filesUploaded.push(document_created);
     }
 
@@ -50,55 +41,64 @@ export class DocumentService {
     return filesUploaded;
   }
 
-  async userFileupload (userId: number,
-    file: {
-      buffer: Buffer;
-      filetype: string;
-      filename: string;
-      mimetype: string;
-      isObligatory?: boolean;
-    }
-  ){
-      const uploaded_file = await this.fileUpload(file);
-      console.log(`filetype : ${file.filetype}`);
-      const docType = await this.getDocumentTypeByName(file.filetype);
-      const document_created = await this.create({
-        userId: userId,
-        type: file.filetype,
-        typeId: docType.id,
-        fileId: uploaded_file.fileId,
-        publicUrl: uploaded_file.fileUrl,
-        isObligatory: true,
-      });
-    return document_created;
+  async userFileupload(
+  userId: number,
+  file: {
+    buffer: Buffer;
+    filetype: string;
+    filename: string;
+    mimetype: string;
+    isObligatory?: boolean;
   }
+) {
+  // 1. Vérifier si un document de ce type existe déjà pour cet utilisateur
+  const existingDoc = await this.documentRepository.findOne({userId: userId, type: file.filetype});
+
+  // 2. Si il existe, le supprimer (remplacement)
+  if (existingDoc) {
+    await this.documentRepository.delete(existingDoc.id);
+  }
+
+  // 3. Upload du nouveau fichier
+  const uploaded_file = await this.fileUpload(file);
+
+  // 4. Récupérer le type de document
+  const docType = await this.getDocumentTypeByName(file.filetype);
+
+  // 5. Créer l'entrée en base
+  const document_created = await this.create({
+    userId: userId,
+    type: file.filetype,
+    typeId: docType.id,
+    fileId: uploaded_file.fileId,
+    publicUrl: uploaded_file.fileUrl,
+    isObligatory: file.isObligatory ?? true,
+  });
+
+  return document_created;
+}
 
 
   async fileUpload(file: {
-      buffer: Buffer;
-      filename: string;
-      mimetype: string;
-    }): Promise<{ fileId: string; fileUrl: string }> {
-      const fileBuffer = await file.buffer;
-      const originalName = file.filename;
-      const mimeType = file.mimetype;
-      const fileUpload: {
-        id: string;
-        name: string;
-        webContentLink: string;
-        webViewLink: string;
-      } = await this.googleDriveService.uploadFile(
-        fileBuffer,
-        originalName,
-        mimeType,
-      );
-      const fileId = fileUpload.webContentLink;
-      const fileUrl = fileUpload.webContentLink; // ajustez selon votre
-      return { fileId: fileId, fileUrl: fileUrl };
-    }
-
-  
-  
+    buffer: Buffer;
+    filename: string;
+    mimetype: string;
+  }): Promise<{ fileId: string; fileUrl: string }> {
+    const { buffer, filename, mimetype } = file;
+    const uploadedFile = await this.s3Service.uploadFile(
+      buffer,
+      filename,
+      mimetype,
+      'documents'
+    );
+    // uploadedFile contient : { key, url }
+    return {
+      fileId: uploadedFile.key,          // ✅ ID unique Google Drive
+      fileUrl: uploadedFile.url, // ✅ Lien de visualisation
+    };
+  }
+    
+    
   async create(input: CreateDocumentDto) {
     return this.documentRepository.create(input);
   }
@@ -117,14 +117,22 @@ export class DocumentService {
     return docs_with_types;
   }
 
+    async find(filters: DocumentFilters){
+      const document =  await this.documentRepository.findOne(filters);
+      return document;
+    }
+
+  
+  
+
   async findPending(){
     return this.documentRepository.findPending();
   }
 
   async getDocumentsByPlayerIds(playerIds: number[]) {
-  if (!playerIds.length) return [];
-  return this.documentRepository.findByPlayerIds(playerIds);
-}
+    if (!playerIds.length) return [];
+    return this.documentRepository.findByPlayerIds(playerIds);
+  }
 
   async validateDocument(data: ValidateDocumentDto) {
     const { documentId, adminId, status } = data;
@@ -150,6 +158,33 @@ export class DocumentService {
 
   async getAllDocuments() {
     return this.documentRepository.findAll();
+  }
+
+  async deleteDocument(id: number, userId: number) {
+    const document = await this.documentRepository.findById(id);
+    if (!document) throw new NotFoundException('Document introuvable');
+    if (document.userId !== userId) {
+      throw new UnauthorizedException();
+    }
+
+    // 1. Supprimer le fichier sur Google Drive
+    try {
+
+      await this.s3Service.deleteFile(document.fileId);
+      console.log(`Suppresion du fichier Drive par l'utilisateur ${userId}`);
+    } catch (error:any) {
+      console.error(`Erreur lors de la suppression du fichier Drive : ${error.message}`);
+      throw new BadRequestException();
+    }
+
+    // 2. Supprimer l'entrée en base de données
+    await this.documentRepository.delete(id);
+  }
+
+  async getSignedUrl(fileId: string): Promise<string> {
+    // Générer une URL temporaire pour visualiser le document
+    const url =  await this.s3Service.getSignedUrl(fileId, 300); // 5 minutes
+    return url;
   }
 
   // ========== TYPES DE DOCUMENTS ==========

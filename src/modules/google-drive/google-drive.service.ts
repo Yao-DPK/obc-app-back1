@@ -32,6 +32,8 @@ export class GoogleDriveService implements OnModuleInit {
     this.drive = google.drive({ version: 'v3', auth: this.oauth2Client });
   }
 
+  // ========== UPLOAD ==========
+
   async uploadFile(
     fileBuffer: Buffer,
     originalName: string,
@@ -60,8 +62,46 @@ export class GoogleDriveService implements OnModuleInit {
       });
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Upload échoué : ${error.message}`);
+      throw error;
+    }
+  }
+
+  // ========== SUPPRESSION ==========
+
+  async deleteFile(fileId: string): Promise<void> {
+    if (!fileId) {
+      throw new Error('L\'ID du fichier est requis pour la suppression');
+    }
+
+    try {
+      await this.drive.files.delete({
+        fileId: fileId,
+      });
+      this.logger.log(`Fichier Google Drive supprimé : ${fileId}`);
+    } catch (error: any) {
+      this.logger.error(`Suppression échouée (${fileId}) : ${error.message}`);
+      throw error;
+    }
+  }
+
+  // ========== SUPPRESSION AVEC VÉRIFICATION (optionnel) ==========
+
+  async deleteFileIfExists(fileId: string): Promise<boolean> {
+    if (!fileId) return false;
+
+    try {
+      // Vérifier d'abord si le fichier existe
+      await this.drive.files.get({ fileId });
+      // Si le fichier existe, le supprimer
+      await this.deleteFile(fileId);
+      return true;
+    } catch (error: any) {
+      if (error.code === 404) {
+        this.logger.warn(`Fichier introuvable (${fileId}), suppression ignorée`);
+        return false;
+      }
       throw error;
     }
   }
