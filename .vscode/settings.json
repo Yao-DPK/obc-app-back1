@@ -1,0 +1,37 @@
+{
+  // ====== EXCLURE node_modules de la recherche ======
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.next": true,
+    "**/*.log": true
+  },
+
+  // ====== EXCLURE node_modules du watcher ======
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  },
+
+  // ====== TYPE SCRIPT ======
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "typescript.suggest.autoImports": false,
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "typescript.tsserver.log": "off",
+
+  // ====== ESLINT ======
+  "eslint.workingDirectories": [
+    { "mode": "auto" }
+  ],
+  "eslint.runtime": "node",
+
+  // ====== MONOREPO ======
+  "typescript.enablePromptUseWorkspaceTsdk": false,
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+
+  // ====== UTILISER LA VERSION INTÉGRÉE DE TS ======
+  "typescript.useWorkspaceVersion": false
+}

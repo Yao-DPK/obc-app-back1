@@ -1,25 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { db, paymentIntents, eq, desc } from '@/database/db';
-import type { IntentInsert, IntentSelect } from '@/database/db';
+import type { PayIntentInsert, PayIntentSelect } from '@/database/db';
 
 @Injectable()
 export class PaymentIntentRepository {
-  async create(data: IntentInsert): Promise<IntentSelect> {
+  async create(data: PayIntentInsert): Promise<PayIntentSelect> {
     const [intent] = await db.insert(paymentIntents).values(data).returning();
     return intent;
   }
 
-  async findAll(): Promise<IntentSelect[] | null > {
+  async findAll(): Promise<PayIntentSelect[] | null > {
       const intents = await db.select().from(paymentIntents);
       return intents || null;
     }
 
-  async findById(id: number): Promise<IntentSelect | null> {
+  async findById(id: number): Promise<PayIntentSelect | null> {
     const [intent] = await db.select().from(paymentIntents).where(eq(paymentIntents.id, id));
     return intent || null;
   }
 
-  async findByObligation(obligationId: number): Promise<IntentSelect[]> {
+  async findByObligation(obligationId: number): Promise<PayIntentSelect[]> {
     return db
       .select()
       .from(paymentIntents)
@@ -27,7 +27,7 @@ export class PaymentIntentRepository {
       .orderBy(desc(paymentIntents.declaredAt));
   }
 
-  async findByUser(userId: number): Promise<IntentSelect[]> {
+  async findByUser(userId: number): Promise<PayIntentSelect[]> {
     return db
       .select()
       .from(paymentIntents)
@@ -35,14 +35,14 @@ export class PaymentIntentRepository {
       .orderBy(desc(paymentIntents.declaredAt));
   }
 
-  async findByStatus(status: string): Promise<IntentSelect[]> {
+  async findByStatus(status: string): Promise<PayIntentSelect[]> {
     return db
       .select()
       .from(paymentIntents)
       .where(eq(paymentIntents.status, status));
   }
 
-  async update(id: number, data: Partial<IntentInsert>): Promise<IntentSelect | null> {
+  async update(id: number, data: Partial<PayIntentInsert>): Promise<PayIntentSelect | null> {
     const [updated] = await db
       .update(paymentIntents)
       .set({ ...data })
@@ -63,7 +63,7 @@ export class PaymentIntentRepository {
     });
   }
 
-  async findByTransactionReference(ref: string): Promise<IntentSelect | null> {
+  async findByTransactionReference(ref: string): Promise<PayIntentSelect | null> {
     const [intent] = await db
       .select()
       .from(paymentIntents)

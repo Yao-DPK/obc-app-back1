@@ -1,9 +1,7 @@
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
-import { GoogleDriveModule } from './modules/google-drive/google-drive.module';
 import { ConfigModule } from '@nestjs/config';
-import { GoogleAuthModule } from './modules/google-auth/google-auth.module';
 import { DocumentModule } from './modules/document/document.module';
 import { UserModule } from './modules/user/user.module';
 import { InscriptionModule } from './modules/inscription/inscription.module';
@@ -15,15 +13,14 @@ import { EmailModule } from './modules/email/email.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { S3Service } from './modules/s3/s3.service';
 import { S3Module } from './modules/s3/s3.module';
+import { EventModule } from './modules/event/event.module';
 
 @Module({
   imports: [
     /* TRPCModule.forRoot({
       autoSchemaFile: './trpc',
     }), */ AuthModule,
-    GoogleDriveModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    GoogleAuthModule,
     DocumentModule,
     UserModule,
     GuardianModule,
@@ -32,6 +29,7 @@ import { S3Module } from './modules/s3/s3.module';
     EmailModule,
     OtpModule,
     S3Module,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [AppService, S3Service],

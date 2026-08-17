@@ -29,8 +29,8 @@ export const paymentEvents = pgTable('payment_events', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export type EventInsert = typeof paymentEvents.$inferInsert;
-export type EventSelect = typeof paymentEvents.$inferSelect;
+export type PayEventInsert = typeof paymentEvents.$inferInsert;
+export type PayEventSelect = typeof paymentEvents.$inferSelect;
 
 /* Stocke les transactions déclenchés */
 export const paymentIntents = pgTable('payment_intents', {
@@ -58,8 +58,8 @@ export const paymentIntents = pgTable('payment_intents', {
   statusIds: index('pay_intent_status_idx').on(table.status)
 }));
 
-export type IntentInsert = typeof paymentIntents.$inferInsert;
-export type IntentSelect = typeof paymentIntents.$inferSelect;
+export type PayIntentInsert = typeof paymentIntents.$inferInsert;
+export type PayIntentSelect = typeof paymentIntents.$inferSelect;
 
 
 /* Stocke l'avancée des paiements */
@@ -73,8 +73,8 @@ export const paymentObligations = pgTable('payment_obligations', {
   totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).$type<number>().notNull(),
   paidAmount: decimal('paid_amount', { precision: 10, scale: 2 }).$type<number>().default(0),
   remainingAmount: decimal('remaining_amount', { precision: 10, scale: 2 }).$type<number>(), // calculable, stocké pour requêtes
-  dueDate: date('due_date'),
-  description: varchar('description', { length: 255 }),
+  dueDate: timestamp('due_date'),
+  description: varchar('description', { length: 255 }).default(''),
   status: varchar('status', { length: 20 })
     .default('pending')
     .notNull(), // pending, partial, paid, overdue, cancelled
@@ -86,5 +86,5 @@ export const paymentObligations = pgTable('payment_obligations', {
 }));
 
 
-export type ObligationInsert = typeof paymentObligations.$inferInsert;
-export type ObligationSelect = typeof paymentObligations.$inferSelect;
+export type PayObligationInsert = typeof paymentObligations.$inferInsert;
+export type PayObligationSelect = typeof paymentObligations.$inferSelect;

@@ -2,12 +2,13 @@
 import { Injectable } from '@nestjs/common';
 import { db, documentTypes, eq, inArray, or, ilike, and, gte, lte, asc, desc } from '../../database/db';
 import type { DocumentTypeInsert, DocumentTypeSelect } from '../../database/db';
-import { SQL } from 'drizzle-orm';
+import { sql, SQL } from 'drizzle-orm';
 
 // ========== INTERFACE DES FILTRES ==========
 export type DocumentTypeFilters = {
   id?: number;
   name?: string;
+  event?: string;
   names?: string[]; // pour plusieurs noms (IN)
   isActive?: boolean;
   isObligatory?: boolean;
@@ -33,6 +34,7 @@ export class DocumentTypeRepository {
     if (filters.name) {
       conditions.push(eq(documentTypes.name, filters.name));
     }
+
     if (filters.isActive !== undefined) {
       conditions.push(eq(documentTypes.isActive, filters.isActive));
     }

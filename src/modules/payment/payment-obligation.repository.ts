@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { db, paymentObligations, eq, and, desc, sql, or,gte, lte, asc} from '@/database/db';
-import type { ObligationInsert, ObligationSelect } from '@/database/db';
+import type { PayObligationInsert, PayObligationSelect } from '@/database/db';
 import {  inArray, SQL } from 'drizzle-orm';
 
 export type ObligationsFilters = {
@@ -99,12 +99,12 @@ export class PaymentObligationRepository {
       
     }
 
-  async create(data: ObligationInsert): Promise<ObligationSelect> {
+  async create(data: PayObligationInsert): Promise<PayObligationSelect> {
     const [obligation] = await db.insert(paymentObligations).values(data).returning();
     return obligation;
   }
 
-  async findAll(query: any): Promise<ObligationSelect[] | null > {
+  async findAll(query: any): Promise<PayObligationSelect[] | null > {
     // On utilise findMany avec un filtre isActive seulement si on ne veut pas les inactifs
     const filters = query.includeInactive ? query : { ...query, isActive: true };
     //console.log(`findAll filters: ${JSON.stringify(filters)}`);
@@ -115,33 +115,33 @@ export class PaymentObligationRepository {
     });
   }
 
-  async findById(id: number): Promise<ObligationSelect | null> {
+  async findById(id: number): Promise<PayObligationSelect | null> {
     const [obligation] = await db.select().from(paymentObligations).where(eq(paymentObligations.id, id));
     return obligation || null;
   }
 
-   async findByPlayerId(playerId: number): Promise<ObligationSelect[]> {
+   async findByPlayerId(playerId: number): Promise<PayObligationSelect[]> {
     return db
         .select()
         .from(paymentObligations)
         .where(eq(paymentObligations.playerId, playerId));
     }
 
-  async findByEvent(eventId: number): Promise<ObligationSelect[]> {
+  async findByEvent(eventId: number): Promise<PayObligationSelect[]> {
     return db
       .select()
       .from(paymentObligations)
       .where(eq(paymentObligations.eventId, eventId));
   }
 
-  async findByStatus(status: string): Promise<ObligationSelect[]> {
+  async findByStatus(status: string): Promise<PayObligationSelect[]> {
     return db
       .select()
       .from(paymentObligations)
       .where(eq(paymentObligations.status, status));
   }
 
-  async update(id: number, data: Partial<ObligationInsert>): Promise<ObligationSelect | null> {
+  async update(id: number, data: Partial<PayObligationInsert>): Promise<PayObligationSelect | null> {
 
     const [updated] = await db
       .update(paymentObligations)

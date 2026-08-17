@@ -3,7 +3,6 @@ import { ConflictException, Injectable, NotFoundException, UnauthorizedException
 import type { CreateDocumentDto, ValidateDocumentDto } from './document.dto';
 import { DocumentFilters, DocumentRepository } from './document.repository';
 import { z } from 'zod';
-import { GoogleDriveService } from '../google-drive/google-drive.service';
 import { DocumentTypeRepository } from './documentTypeRepository';
 import { DocumentInsert, DocumentTypeInsert } from '@/database/db';
 import { S3Service } from '../s3/s3.service';
@@ -12,7 +11,6 @@ import { S3Service } from '../s3/s3.service';
 export class DocumentService {
   constructor(
     private documentRepository: DocumentRepository,
-    private googleDriveService: GoogleDriveService,
     private docTypeRepo: DocumentTypeRepository,
     private s3Service: S3Service
   ) {}

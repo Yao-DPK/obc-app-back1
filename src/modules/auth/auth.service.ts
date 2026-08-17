@@ -100,8 +100,9 @@ export class AuthService {
     rawToken: string,
     type: VerificationTokenType,
   ) {
+    console.log(`1`);
     const tokenHash = hashToken(rawToken);
-
+    console.log(`2`);
     const [record] = await db
       .select()
       .from(verificationTokens)
@@ -114,14 +115,14 @@ export class AuthService {
           gt(verificationTokens.expiresAt, new Date()),
         ),
       );
-
+      console.log(`3`);
     if (!record) return null;
-
+      console.log(`4`);
     await db
       .update(verificationTokens)
       .set({ usedAt: new Date() })
       .where(eq(verificationTokens.id, record.id));
-
+      console.log(`5`);
     return record;
   }
 
@@ -142,7 +143,7 @@ export class AuthService {
         ? this.configService.get('FRONTEND_DEVELOPMENT_URL')
         : this.configService.get('FRONTEND_PRODUCTION_URL');
 
-    await this.emailService.sendPasswordResetEmail(email, rawToken, frontendUrl);
+    await this.emailService.sendPasswordResetEmail(email, rawToken, frontendUrl, 'password_reset');
   }
 
   async verifyResetPasswordToken(rawToken: string, newPassword: string, tokenType: VerificationTokenType): Promise<void> {
@@ -192,18 +193,18 @@ export class AuthService {
       return ;
     }
 
-    const rawToken = await this.createVerificationToken(userId, 'first_login', 1000 * 60 * 60 * 24);
+    const rawToken = await this.createVerificationToken(userId, 'password_reset', 1000 * 60 * 60 * 24);
 
     const frontendUrl =
       process.env.NODE_ENV === 'dev'
         ? this.configService.get('FRONTEND_DEVELOPMENT_URL')
         : this.configService.get('FRONTEND_PRODUCTION_URL');
 
-    await this.emailService.sendFirstLoginEmail(user.email!, rawToken, frontendUrl);
+    await this.emailService.sendFirstLoginEmail(user.email!, rawToken, frontendUrl, 'password_reset');
   }
 
   async verifyFirstLoginToken(rawToken: string, newPassword: string) {
-    const record = await this.consumeVerificationToken(rawToken, 'first_login');
+    const record = await this.consumeVerificationToken(rawToken, 'password_reset');
     if (!record) throw new BadRequestException('Token invalide ou expiré');
     await this.resetPassword(record.userId, newPassword);
   }

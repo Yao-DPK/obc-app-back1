@@ -1,5 +1,5 @@
 // apps/api/src/modules/inscription/inscription.service.ts
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { UserRepository } from '../user/user.repository';
 import * as bcrypt from 'bcrypt';
 import { z } from 'zod';
@@ -223,6 +223,15 @@ export class InscriptionService {
     message: 'Inscription enregistrée. Les garants vont recevoir un email de confirmation.'
   };
 }
+
+  async get_register_info(){
+    console.log("Récupération des données pour l'inscription");
+    const required_docs = await this.documentService.getDocumentTypes({event: "Inscription"});
+    if (required_docs.length == 0){
+      throw new NotFoundException("Aucun document trouvé pour cet evenement");
+    };
+    return { required_docs };
+  }
   async validateRegistration(userId: number){
     this.userRepository.update(userId, {registrationStatus: 'inscrit'});
   }

@@ -1,5 +1,5 @@
 // src/modules/payment/payment.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PaymentObligationRepository } from './payment-obligation.repository';
 import { PaymentIntentRepository } from './payment-intent.repository';
@@ -7,10 +7,11 @@ import {
   CreateObligationDto,
   CreateIntentDto,
   VerifyPaymentDto,
-  PaymentEvent,
   CreatePaymentEventDto,
   UpdatePaymentEventDto,
-  PaymentObligation,
+  PaymentEventSelectSchema,
+  PaymentEvent,
+  UpdateObligationDto,
 } from './payment.dto';
 
 @Injectable()
@@ -40,20 +41,23 @@ export class PaymentService {
   }
 
   async getAllEvents(includeInactive = false): Promise<PaymentEvent[]> {
-    if (includeInactive) {
-      return this.eventRepo.findAll();
-    }
-    return this.eventRepo.findAllActive();
+    const events = includeInactive
+      ? await this.eventRepo.findAll()
+      : await this.eventRepo.findAllActive();
+    // 👇 on parse avec le schéma pour transformer les dates
+    return events.map(e => PaymentEventSelectSchema.parse(e));
   }
 
   async createEvent(dto: CreatePaymentEventDto): Promise<PaymentEvent> {
-    return this.eventRepo.create(dto);
+    const created = await this.eventRepo.create(dto);
+    return PaymentEventSelectSchema.parse(created);
   }
 
   async updateEvent(id: number, dto: UpdatePaymentEventDto): Promise<PaymentEvent> {
     const event = await this.eventRepo.findById(id);
     if (!event) throw new NotFoundException('Événement non trouvé');
-    return this.eventRepo.update(id, dto);
+    const updated = await this.eventRepo.update(id, dto);
+    return PaymentEventSelectSchema.parse(updated);
   }
 
   async deleteEvent(id: number): Promise<void> {
@@ -64,22 +68,22 @@ export class PaymentService {
 
   // ========== OBLIGATIONS ==========
 
-  async createObligation(dto: CreateObligationDto) {
-    const event = await this.eventRepo.findById(dto.eventId);
+  async createObligation(dto: Partial<CreateObligationDto>) {
+    const event = await this.eventRepo.findById(dto.eventId!);
     if (!event) throw new NotFoundException('Événement non trouvé');
 
     // Vérifier que le montant n'excède pas le montant de l'événement
-    if (dto.totalAmount > Number(event.amount)) {
+    if (dto.totalAmount! > Number(event.amount)) {
       throw new BadRequestException('Le montant total dépasse le montant de l\'événement');
     }
 
     const obligation = await this.obligationRepo.create({
-      eventId: dto.eventId,
-      playerId: dto.playerId,
-      totalAmount: dto.totalAmount,
+      eventId: dto.eventId!,
+      playerId: dto.playerId!,
+      totalAmount: dto.totalAmount!,
       paidAmount: 0,
-      remainingAmount: dto.totalAmount,
-      dueDate: dto.dueDate ?( new Date(dto.dueDate) as unknown as string)  : (event.endDate as unknown as string),
+      remainingAmount: dto.totalAmount!,
+      dueDate: dto.dueDate ?( new Date(dto.dueDate) )  : (event.endDate),
       description: `Paiement pour ${event.name}`,
       status: 'pending',
     });
@@ -132,12 +136,34 @@ export class PaymentService {
       return this.obligationRepo.findByPlayerId(playerId);
     }
 
-    async updateObligation(id: number, data: CreateObligationDto) {
-    const obligation = await this.obligationRepo.findById(id);
-    if (!obligation) throw new NotFoundException('Obligation non trouvée');
-    const updated = this.obligationRepo.update(id, data);
-    return updated;
-  }
+    async updateObligation(id: number, data: UpdateObligationDto) {
+      // Vérifier l'existence
+      const obligation = await this.obligationRepo.findById(id);
+      if (!obligation) {
+        throw new NotFoundException('Obligation non trouvée');
+      }
+
+      // Vérifier si l'obligation est déjà totalement payée
+      const isFullyPaid = Number(obligation.paidAmount) === Number(obligation.totalAmount);
+
+      // Cas : on tente de passer le statut à "overdue" alors que c'est déjà payé
+      if (data.status === 'overdue' && isFullyPaid) {
+        throw new ConflictException('Ce paiement a déjà été effectué et ne peut pas être marqué comme en retard.');
+      }
+
+      // Préparer les données de mise à jour
+      const updateData: any = { ...data };
+
+      // Si le statut devient "paid", on force les montants
+      if (data.status === 'paid') {
+        updateData.paidAmount = Number(obligation.totalAmount);
+        updateData.remainingAmount = 0;
+      }
+
+      // Mettre à jour
+      const updated = await this.obligationRepo.update(id, updateData);
+      return updated;
+    }
 
   // ========== INTENTIONS ==========
 

@@ -26,6 +26,7 @@ export type DocumentFilters = {
   id?: number;
   userId?: number;
   typeId?: number;
+  
   type?: string;
   documentStatus?: string | string[]; // Allows single status or multiple (e.g., ['Validé', 'En attente'])
   isObligatory?: boolean;

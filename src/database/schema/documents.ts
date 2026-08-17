@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   text,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
@@ -40,11 +41,8 @@ export const documentTypes = pgTable('document_types', {
   name: varchar('name', { length: 100 }).notNull().unique(),
   description: text('description'),
   isObligatory: boolean('is_obligatory').default(false),
-  // Catégories de joueurs concernées (ex: ['mini-basket', 'cadets'])
   applicableCategories: varchar('applicable_categories', { length: 255 }).array(),
-  // Ordre d'affichage
   displayOrder: integer('display_order').default(0),
-  // Statut actif/inactif
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

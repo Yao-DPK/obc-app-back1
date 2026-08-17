@@ -1,23 +1,35 @@
 // src/types/payment.dto.ts
-import { paymentIntents, paymentObligations } from '@/database/schema';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
+import { paymentObligations, paymentIntents, paymentEvents } from '@/database/schema';
 
 // ============================================================
 // OBLIGATIONS
 // ============================================================
 
 export const ObligationSelectSchema = createSelectSchema(paymentObligations);
-export const ObligationInsertSchema = createInsertSchema(paymentObligations);
+export const ObligationInsertSchema = createInsertSchema(paymentObligations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type CreateObligationDto = z.infer<typeof ObligationInsertSchema>;
+export type UpdateObligationDto = Partial<CreateObligationDto>;
+export type PaymentObligation = z.infer<typeof ObligationSelectSchema>;
 
 // ============================================================
-// INTENTIONS DE PAIEMENT
+// INTENTIONS
 // ============================================================
 
-export const CreateIntentSchema = createInsertSchema(paymentIntents);
+export const IntentSelectSchema = createSelectSchema(paymentIntents);
+export const IntentInsertSchema = createInsertSchema(paymentIntents).omit({
+  id: true,
+  createdAt: true,
+});
 
-export type CreateIntentDto = z.infer<typeof CreateIntentSchema>;
+export type CreateIntentDto = z.infer<typeof IntentInsertSchema>;
+export type PaymentIntent = z.infer<typeof IntentSelectSchema>;
 
 // ============================================================
 // VÉRIFICATION
@@ -31,74 +43,25 @@ export const VerifyPaymentSchema = z.object({
 export type VerifyPaymentDto = z.infer<typeof VerifyPaymentSchema>;
 
 // ============================================================
-// ÉVÉNEMENTS (PAYMENT EVENTS)
+// ÉVÉNEMENTS DE PAIEMENT
 // ============================================================
 
-export interface PaymentEvent {
-  id: number;
-  name: string;
-  description: string | null;
-  amount: number;
-  allowInstallments: boolean | null;
-  startDate: Date | null;
-  endDate: Date | null;
-  isActive: boolean | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
+export const PaymentEventSelectSchema = createSelectSchema(paymentEvents);
+export const PaymentEventInsertSchema = createInsertSchema(paymentEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
-export interface CreatePaymentEventDto {
-  name: string;
-  description?: string;
-  amount: number;
-  allowInstallments?: boolean;
-  startDate?: Date | null;
-  endDate?: Date | null;
-}
-
-export interface UpdatePaymentEventDto extends Partial<CreatePaymentEventDto> {
-  isActive?: boolean;
-}
+export type CreatePaymentEventDto = z.infer<typeof PaymentEventInsertSchema>;
+export type UpdatePaymentEventDto = Partial<CreatePaymentEventDto>;
+export type PaymentEvent = z.infer<typeof PaymentEventSelectSchema>;
 
 // ============================================================
-// TYPES DÉRIVÉS (pour le store)
+// RÉSUMÉ
 // ============================================================
 
-export type PaymentObligation = {
-  id: number;
-  userId: number;
-  eventId: number;
-  playerId: number;
-  totalAmount: number;
-  paidAmount: number;
-  remainingAmount: number;
-  dueDate: string | null;
-  description: string;
-  status: 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled';
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type PaymentIntent = {
-  id: number;
-  obligationId: number;
-  userId: number;
-  amount: number;
-  method: 'momo' | 'card';
-  transactionReference: string | null;
-  transactionMetadata: {
-    phone?: string;
-    cart_id: string;
-    custom_field: string;
-  } | null;
-  status: 'pending' | 'paid' | 'failed' | 'expired' | 'cancelled';
-  declaredAt: string;
-  verifiedBy: number | null;
-  verifiedAt: string | null;
-  createdAt: string;
-};
-
-export type PaymentSummary = {
+export interface PaymentSummary {
   totalObligations: number;
   totalAmount: number;
   totalPaid: number;
@@ -109,4 +72,4 @@ export type PaymentSummary = {
     paid: number;
     overdue: number;
   };
-};
+}

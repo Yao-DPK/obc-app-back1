@@ -43,16 +43,16 @@ export class EmailService {
     to: string,
     token: string,
     frontendUrl: string,
+    purpose: "email_confirmation" | "password_reset" | "first_login" | "invite",
   ): Promise<void> {
-    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+    const resetLink = `${frontendUrl}/reset-password?token=${token}&purpose=${purpose}`;
     const subject = 'Réinitialisation de votre mot de passe';
     const html = `
     <div style="font-family: Arial, sans-serif;">
       <h2>Réinitialisation du mot de passe</h2>
       <p>Cliquez sur le lien ci-dessous pour définir un nouveau mot de passe :</p>
-      <a href="${resetLink}">${resetLink}</a>
+      <a href="${resetLink}">${subject}</a>
       <p>Ce lien expire dans 1 heure.</p>
-      <p>Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.</p>
     </div>
   `;
     await this.transporter.sendMail({ to, subject, html });
@@ -62,8 +62,9 @@ export class EmailService {
     to: string,
     token: string,
     frontendUrl: string,
+    purpose: "email_confirmation" | "password_reset" | "first_login" | "invite",
   ): Promise<void> {
-    const LoginLink = `${frontendUrl}/reset-password?token=${token}`;
+    const LoginLink = `${frontendUrl}/reset-password?token=${token}&purpose=${purpose}`;
     const subject = 'Création de votre mot de passe';
     const html = `
     <div style="font-family: Arial, sans-serif;">
