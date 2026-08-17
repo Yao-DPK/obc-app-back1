@@ -9,7 +9,8 @@ import {
   ilike, 
   gte, 
   lte, 
-  SQL 
+  SQL, 
+  sql
 } from 'drizzle-orm';
 import { CreateDocumentDto } from './document.dto';
 
@@ -217,5 +218,13 @@ export class DocumentRepository {
   async areAllDocumentsValid(userId: number): Promise<boolean> {
     const userDocs = await this.findByUser(userId);
     return userDocs.every(doc => doc.documentStatus === 'Validé');
+  }
+
+  async countPendingDocuments(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(documents)
+      .where(eq(documents.documentStatus, 'En attente de Validation'));
+    return Number(result[0]?.count || 0);
   }
 }

@@ -167,4 +167,33 @@ export class PaymentObligationRepository {
       status,
     });
   }
+
+  async getDashboardStats(): Promise<{
+    totalObligations: number;
+    totalPaid: number;
+    totalRemaining: number;
+    paidCount: number;
+    pendingCount: number;
+    overdueCount: number;
+  }> {
+    const [result] = await db
+      .select({
+        totalObligations: sql<number>`count(*)`,
+        totalPaid: sql<number>`sum(${paymentObligations.paidAmount})`,
+        totalRemaining: sql<number>`sum(${paymentObligations.remainingAmount})`,
+        paidCount: sql<number>`count(*) filter (where ${paymentObligations.status} = 'paid')`,
+        pendingCount: sql<number>`count(*) filter (where ${paymentObligations.status} = 'pending')`,
+        overdueCount: sql<number>`count(*) filter (where ${paymentObligations.status} = 'overdue')`,
+      })
+      .from(paymentObligations);
+
+    return {
+      totalObligations: Number(result?.totalObligations || 0),
+      totalPaid: Number(result?.totalPaid || 0),
+      totalRemaining: Number(result?.totalRemaining || 0),
+      paidCount: Number(result?.paidCount || 0),
+      pendingCount: Number(result?.pendingCount || 0),
+      overdueCount: Number(result?.overdueCount || 0),
+    };
+  }
 }

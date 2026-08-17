@@ -14,6 +14,7 @@ import { OtpModule } from './modules/otp/otp.module';
 import { S3Service } from './modules/s3/s3.service';
 import { S3Module } from './modules/s3/s3.module';
 import { EventModule } from './modules/event/event.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { EventModule } from './modules/event/event.module';
     OtpModule,
     S3Module,
     EventModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, S3Service],

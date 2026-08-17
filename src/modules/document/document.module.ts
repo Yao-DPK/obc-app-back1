@@ -10,6 +10,6 @@ import { S3Module } from '../s3/s3.module';
   imports: [S3Module],
   controllers: [DocumentController],
   providers: [DocumentService, DocumentRepository, DocumentTypeRepository],
-  exports: [DocumentService],
+  exports: [DocumentService, DocumentRepository],
 })
 export class DocumentModule {}

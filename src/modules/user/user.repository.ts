@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db, users, eq, and, inArray, players, PlayerSelect } from '../../database/db';
+import { db, users, eq, and, inArray, players, PlayerSelect, sql, or } from '../../database/db';
 import { UserInsert, UserSelect } from '../../database/db';
 
 @Injectable()
@@ -78,4 +78,32 @@ export class UserRepository {
     const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, id));
     return !!user;
   }
+
+  async countByRole(role: 'admin' | 'super_admin' | 'player' | 'parent'): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(eq(users.role, role));
+    return Number(result[0]?.count || 0);
+  }
+
+  async countPendingRegistrations(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(
+        or(
+          eq(users.registrationStatus, 'pre_inscrit'),
+        )
+      );
+    return Number(result[0]?.count || 0);
+  }
+
+  async countTotalUsers(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users);
+    return Number(result[0]?.count || 0);
+  }
+
 }
