@@ -10,6 +10,11 @@ import {
   NotFoundException,
   UseGuards,
   BadRequestException,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -18,10 +23,11 @@ import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { UserRepository } from './user.repository';
-import { Public } from '../common/decorators/public.decorator';
 import { AllRoles } from '../common/decorators/all-roles.decorator';
 import { type UpdateProfileDto } from './dto/user.dto';
-
+import { FileInterceptor } from '@nestjs/platform-express';
+import { DocumentService } from '../document/document.service';
+import { ResizeAvatarPipe } from '../common/pipes/ResizeAvatar.pipe';
 
 
 
@@ -29,6 +35,7 @@ import { type UpdateProfileDto } from './dto/user.dto';
 export class UserController {
   constructor(
     private readonly userService: UserService,
+    private documentService: DocumentService,
     private userRepository: UserRepository,
   ) {}
 
@@ -69,6 +76,23 @@ export class UserController {
     return this.userService.updateProfile(authuser.id, input);
   }
 
+  @Post('me/upload')
+  @AllRoles()
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFileandValidate(@UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: /^image\/(jpeg|png|jpg)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @UploadedFile(ResizeAvatarPipe) resizedBuffer: Buffer,
+    @GetUser() authUser: any){
+    const uploaded_document = await this.documentService.userFileupload(authUser.id, {...file, buffer: resizedBuffer, filename: file.originalname, filetype: 'Photo'});
+    return uploaded_document;
+  }
   
 
 

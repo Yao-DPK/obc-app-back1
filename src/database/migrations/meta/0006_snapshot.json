@@ -1,5 +1,5 @@
 {
-  "id": "375fc413-9013-42a7-93e9-d2feaa105fb4",
+  "id": "6e58fff4-7586-438b-9b16-1f730264937d",
   "prevId": "9bac2baf-556a-4495-98ff-77bf7dbf5388",
   "version": "7",
   "dialect": "postgresql",
@@ -134,13 +134,15 @@
           "name": "first_name",
           "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "''"
         },
         "last_name": {
           "name": "last_name",
           "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "''"
         },
         "gender": {
           "name": "gender",
@@ -925,7 +927,7 @@
         },
         "due_date": {
           "name": "due_date",
-          "type": "date",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -933,7 +935,8 @@
           "name": "description",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "''"
         },
         "status": {
           "name": "status",
@@ -1050,7 +1053,7 @@
           "type": "varchar(36)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'c766ff3a-5f11-40a3-88f5-adde77e1e312'"
+          "default": "'4a885f2a-e97e-4278-9ea1-2a6a7b2c98a0'"
         },
         "replaced_by": {
           "name": "replaced_by",
@@ -1207,6 +1210,84 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "document_type_ids": {
+          "name": "document_type_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "payment_event_ids": {
+          "name": "payment_event_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
