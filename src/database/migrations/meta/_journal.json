@@ -50,6 +50,13 @@
       "when": 1787359647047,
       "tag": "0006_narrow_rhodey",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787366406913,
+      "tag": "0007_wealthy_madrox",
+      "breakpoints": true
     }
   ]
 }

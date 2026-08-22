@@ -1,11 +1,11 @@
+// apps/api/src/modules/user/user.service.ts
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { UserRepository } from './user.repository';
+import { UserRepository, UserFilters } from './user.repository';
 import { PlayerRepository } from './player.repository';
 import { PlayerSelect, UserInsert, UserSelect } from '../../database/db';
 import { UpdateProfileDto } from './dto/user.dto';
 import { GuardianService } from '../guardian/guardian.service';
-import { use } from 'passport';
 
 @Injectable()
 export class UserService {
@@ -15,43 +15,75 @@ export class UserService {
     private readonly guardianService: GuardianService,
   ) {}
 
-  // ========== LECTURE ==========
+  // ========== LECTURE AVANCÉE ==========
+
+  /**
+   * Recherche des utilisateurs avec filtres dynamiques.
+   * Exemple : findUsers({ role: 'player', isVerified: true, search: 'Konan' })
+   */
+  async findUsers(filters?: UserFilters): Promise<Omit<UserSelect, 'passwordHash'>[]> {
+    const users = await this.userRepository.findMany(filters);
+    return users.map((u) => this.safe(u));
+  }
+
+  /**
+   * Recherche des utilisateurs avec leurs détails (joueurs) en une seule requête.
+   * Attention : cette méthode est optimisée pour les joueurs ; pour d'autres rôles,
+   * elle retourne simplement les utilisateurs sans détails.
+   */
+  async findUsersWithDetails(filters?: UserFilters): Promise<Array<Omit<UserSelect, 'passwordHash'> & { playerDetails: PlayerSelect | null }>> {
+    // 1. Récupérer les utilisateurs selon les filtres
+    const users = await this.userRepository.findMany(filters);
+
+    // 2. Récupérer les détails des joueurs pour ceux qui ont le rôle 'player'
+    const userIds = users.filter((u) => u.role === 'player').map((u) => u.id);
+    const playerDetailsMap = new Map<number, PlayerSelect>();
+    if (userIds.length > 0) {
+      const players = await this.playerRepository.findByUserIds(userIds);
+      players.forEach((p) => playerDetailsMap.set(p.userId, p));
+    }
+
+    // 3. Assembler les résultats
+    return users.map((user) => {
+      const { passwordHash, ...safeUser } = user;
+      const playerDetails = playerDetailsMap.get(user.id) || null;
+      return { ...safeUser, playerDetails };
+    });
+  }
+
+  // ========== LECTURE (méthodes existantes) ==========
 
   async getUsersByIds(ids: number[]): Promise<Omit<UserSelect, 'passwordHash'>[]> {
     const users = await this.userRepository.findByIds(ids);
     return users.map(({ passwordHash, ...safe }) => safe);
   }
 
-  async findById(id: number): Promise<Omit<UserSelect, 'passwordHash'>>{
+  async findById(id: number): Promise<Omit<UserSelect, 'passwordHash'>> {
     const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
     return this.safe(user);
   }
 
-  async findByRoleAndId(id: number, role: 'player' | 'parent' | 'admin'){
+  async findByRoleAndId(id: number, role: 'player' | 'parent' | 'admin') {
     const user = await this.userRepository.findByIdAndRole(id, role);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
-
-     const safeUser = await this.safe(user);
-
-    let playerDetails: any = null;
-    if (user!.role === 'player') {
-      playerDetails = await this.playerRepository.findByUserId(user.id);
-      return {...safeUser, playerDetails};
+    const safeUser = this.safe(user);
+    if (user.role === 'player') {
+      const playerDetails = await this.playerRepository.findByUserId(user.id);
+      return { ...safeUser, playerDetails };
     }
-
-    return this.safe(user);
+    return safeUser;
   }
 
-  async findByEmail(email: string): Promise<Omit<UserSelect, 'passwordHash'>>{
+  async findByEmail(email: string): Promise<Omit<UserSelect, 'passwordHash'>> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
     return this.safe(user);
   }
 
-  async findByEmailUnrestricted(email: string): Promise<UserSelect>{
+  async findByEmailUnrestricted(email: string): Promise<UserSelect> {
     const user = await this.userRepository.findByEmail(email);
-    //if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    // Si l'utilisateur n'existe pas, on retourne null (ou on lève une exception selon le besoin)
     return user!;
   }
 
@@ -64,26 +96,26 @@ export class UserService {
       playerDetails = await this.playerRepository.findByUserId(userId);
     }
 
-    const safeUser = await this.safe(user);
+    const safeUser = this.safe(user);
     return { ...safeUser, playerDetails };
   }
 
-  async getUsersWithDetails(ids: number[]): Promise<Array<Omit<UserSelect, 'passwordHash'> & { playerDetails: PlayerSelect }>> {
-    const users = await this.userRepository.findByIds(ids);
-    const userIds = users.filter(u => u.role === 'player').map(u => u.id);
-    const playerDetailsMap = new Map<number, any>();
-    if (userIds.length > 0) {
+  async getUsersWithDetails(
+      ids: number[]
+    ): Promise<Array<Omit<UserSelect, 'passwordHash'> & { playerDetails: PlayerSelect | null }>> {
+      const users = await this.userRepository.findByIds(ids);
+      const userIds = users.filter((u) => u.role === 'player').map((u) => u.id);
+      const playerDetailsMap = new Map<number, PlayerSelect>();
+      if (userIds.length > 0) {
         const players = await this.playerRepository.findByUserIds(userIds);
-        players.forEach(p => playerDetailsMap.set(p.userId, p));
-    }
-    return users.map(user => {
+        players.forEach((p) => playerDetailsMap.set(p.userId, p));
+      }
+      return users.map((user) => {
         const { passwordHash, ...safeUser } = user;
         const playerDetails = playerDetailsMap.get(user.id) || null;
         return { ...safeUser, playerDetails };
-    });
-}
-
-
+      });
+    }
   async getUserRestricted(userId: number): Promise<Omit<UserSelect, 'passwordHash'>> {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
@@ -92,36 +124,33 @@ export class UserService {
       throw new UnauthorizedException('Accès non autorisé');
     }
 
-    const { passwordHash, ...safeUser } = user;
-    return safeUser;
+    return this.safe(user);
   }
 
-  
-  async getGuardiansByPlayer(playerId: number){
+  // ========== RELATIONS (tuteurs / joueurs) ==========
+
+  async getGuardiansByPlayer(playerId: number) {
     const guardianIds = await this.guardianService.getGuardiansByPlayer(playerId);
-    if(!guardianIds){
-      return new Error("Ce joueur n'a pas de tuteur");
+    if (!guardianIds || guardianIds.length === 0) {
+      throw new NotFoundException('Ce joueur n\'a pas de tuteur');
     }
     const guardians = await this.getUsersByIds(guardianIds);
-    return guardians; 
+    return guardians;
   }
 
-  async getPlayersByGuardian(guardianId: number){
+  async getPlayersByGuardian(guardianId: number) {
     const playerIds = await this.guardianService.getPlayersByGuardian(guardianId);
-    if(!playerIds){
-      return new Error("Ce tuteur n'a pas de joueur");
+    if (!playerIds || playerIds.length === 0) {
+      throw new NotFoundException('Ce tuteur n\'a pas de joueur');
     }
-
     const players = await this.getUsersWithDetails(playerIds);
     return players;
-    
   }
 
-  // ========== ECRITURE ==========
+  // ========== ÉCRITURE ==========
 
-  async create(data: UserInsert): Promise<UserSelect>{
-    const new_user = await this.userRepository.create(data);
-    return new_user;
+  async create(data: UserInsert): Promise<UserSelect> {
+    return this.userRepository.create(data);
   }
 
   // ========== MISE À JOUR ==========
@@ -165,7 +194,6 @@ export class UserService {
         if (existingPlayer) {
           await this.playerRepository.update(existingPlayer.id, cleanPlayerFields);
         } else {
-          // Créer l'entrée player si elle n'existe pas
           await this.playerRepository.create({ userId, ...cleanPlayerFields });
         }
       }
@@ -191,10 +219,7 @@ export class UserService {
     return { success: true };
   }
 
-  async setPassword(
-    userId: number,
-    newPassword: string,
-  ): Promise<{ success: true }> {
+  async setPassword(userId: number, newPassword: string): Promise<{ success: true }> {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
@@ -203,18 +228,13 @@ export class UserService {
     return { success: true };
   }
 
-  async updateToken(id: number, confirmationToken: string | null, tokenExpiry: Date | null){
-    const updated = await this.userRepository.update(id, {confirmationToken: confirmationToken, tokenExpiry: tokenExpiry});
-    return updated;
+  async updateToken(id: number, confirmationToken: string | null, tokenExpiry: Date | null) {
+    return this.userRepository.update(id, { confirmationToken, tokenExpiry });
   }
-
 
   // ========== STATUTS ==========
 
-  async updateRegistrationStatus(
-    userId: number,
-    status: string,
-  ): Promise<{ success: true }> {
+  async updateRegistrationStatus(userId: number, status: string): Promise<{ success: true }> {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
@@ -222,10 +242,7 @@ export class UserService {
     return { success: true };
   }
 
-  async updateVerificationStatus(
-    userId: number,
-    status: boolean,
-  ): Promise<{ success: true }> {
+  async updateVerificationStatus(userId: number, status: boolean): Promise<{ success: true }> {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
@@ -239,9 +256,8 @@ export class UserService {
     return this.userRepository.exists(userId);
   }
 
-  async safe(user: UserSelect){
-    const {passwordHash, ...safeUser} = user;
+  private safe(user: UserSelect): Omit<UserSelect, 'passwordHash'> {
+    const { passwordHash, ...safeUser } = user;
     return safeUser;
   }
-  
 }

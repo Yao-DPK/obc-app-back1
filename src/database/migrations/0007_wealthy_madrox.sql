@@ -1,0 +1,2 @@
+ALTER TABLE "refresh_tokens" ALTER COLUMN "family_id" SET DEFAULT 'c5791db0-4cbe-4653-a140-e5563b8a1137';--> statement-breakpoint
+ALTER TABLE "document_types" ADD COLUMN "isPhoto" boolean DEFAULT false NOT NULL;

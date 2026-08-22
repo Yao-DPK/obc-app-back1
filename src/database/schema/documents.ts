@@ -39,6 +39,7 @@ export type DocumentSelect = typeof documents.$inferSelect;
 export const documentTypes = pgTable('document_types', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull().unique(),
+  isPhoto: boolean('isPhoto').default(false).notNull(),
   description: text('description'),
   isObligatory: boolean('is_obligatory').default(false),
   applicableCategories: varchar('applicable_categories', { length: 255 }).array(),

@@ -15,6 +15,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -24,62 +25,89 @@ import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { UserRepository } from './user.repository';
 import { AllRoles } from '../common/decorators/all-roles.decorator';
-import { type UpdateProfileDto } from './dto/user.dto';
+import type { UpdateProfileDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from '../document/document.service';
 import { ResizeAvatarPipe } from '../common/pipes/ResizeAvatar.pipe';
-
-
+import { S3Service } from '../s3/s3.service';
 
 @Controller('users')
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private documentService: DocumentService,
-    private userRepository: UserRepository,
+    private readonly documentService: DocumentService,
+    private readonly userRepository: UserRepository,
+    private readonly s3Service: S3Service,
   ) {}
 
-  // ========== AUTHENTIFIED USER (profil) ==========
+  // ============================================================
+  // PROFIL UTILISATEUR CONNECTÉ
+  // ============================================================
 
+  @Get('me')
   @UseGuards(RolesGuard)
   @Roles(Role.Super_Admin, Role.Admin, Role.Parent, Role.Player)
-  @Get('me')
   async getProfile(@GetUser() user: any) {
-    console.log(`user: ${JSON.stringify(user)}`);
     return this.userService.findById(user.id);
   }
 
+  @Get('me/photo')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Player, Role.Parent, Role.Admin)
+  async getProfilePhoto(@GetUser() authUser: any) {
+    if (!authUser) {
+      throw new NotFoundException('Aucune photo de profil');
+    }
+    const user = await this.userService.findById(authUser.id);
+    if (!user) {
+      throw new NotFoundException('Joueur inexistant');
+    }
+    const document = await this.documentService.find({ userId: authUser.id, type: 'Photo' });
+    const signedUrl = await this.s3Service.getSignedUrl(document?.fileId!, 300);
+    return { signedUrl };
+  }
+
+  @Get('photo/:userId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Player, Role.Parent, Role.Admin, Role.Super_Admin)
+  async getUserPhoto(@GetUser() authUser: any, @Param('userId') userId: number) {
+    if (authUser.role === 'player' && Number(userId) !== authUser.id) {
+        throw new UnauthorizedException("Vous n'avez pas accès à cette ressource");
+
+    }
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Joueur inexistant');
+    }
+    const document = await this.documentService.find({ userId, type: 'Photo' });
+    const signedUrl = await this.s3Service.getSignedUrl(document?.fileId!, 300);
+    return { signedUrl };
+  }
 
   @Get('me/players')
   @UseGuards(RolesGuard)
   @Roles(Role.Parent, Role.Player, Role.Admin, Role.Super_Admin)
-  async getMyPlayers(
-    @GetUser() authuser: any,     
-  ){
-    return this.userService.getPlayersByGuardian(authuser.id);
+  async getMyPlayers(@GetUser() authUser: any) {
+    return this.userService.getPlayersByGuardian(authUser.id);
   }
 
   @Get('me/guardians')
   @Roles(Role.Player)
-  async getMyGuardians(
-    @GetUser() authuser: any,     
-  ){
-    return this.userService.getGuardiansByPlayer(authuser.id);
+  async getMyGuardians(@GetUser() authUser: any) {
+    return this.userService.getGuardiansByPlayer(authUser.id);
   }
 
   @Patch('me')
   @AllRoles()
-  async updateProfile(
-    @GetUser() authuser: any, 
-    @Body() input: UpdateProfileDto
-  ) {
-    return this.userService.updateProfile(authuser.id, input);
+  async updateProfile(@GetUser() authUser: any, @Body() input: UpdateProfileDto) {
+    return this.userService.updateProfile(authUser.id, input);
   }
 
   @Post('me/upload')
   @AllRoles()
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFileandValidate(@UploadedFile(
+  async uploadFileAndValidate(
+    @UploadedFile(
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
@@ -89,30 +117,36 @@ export class UserController {
     )
     file: Express.Multer.File,
     @UploadedFile(ResizeAvatarPipe) resizedBuffer: Buffer,
-    @GetUser() authUser: any){
-    const uploaded_document = await this.documentService.userFileupload(authUser.id, {...file, buffer: resizedBuffer, filename: file.originalname, filetype: 'Photo'});
-    return uploaded_document;
+    @GetUser() authUser: any,
+  ) {
+    const uploadedDocument = await this.documentService.userFileupload(authUser.id, {
+      ...file,
+      buffer: resizedBuffer,
+      filename: file.originalname,
+      filetype: 'Photo',
+    });
+    return uploadedDocument;
   }
-  
 
-
-  // ========== ADMIN / SUPER_ADMIN ==========
+  // ============================================================
+  // ADMIN / SUPER_ADMIN
+  // ============================================================
 
   @Get()
   @AdminOnly()
   async getUsers() {
-    return this.userRepository.findAll();
+    // Utilise le service pour omettre les mots de passe
+    return this.userService.findUsers();
   }
 
   @Post('batch')
+  @AdminOnly()
   async getUsersByIds(@Body() { ids }: { ids: number[] }) {
     if (!ids || !ids.length) throw new BadRequestException('IDs requis');
-    if (ids.length > 100) throw new BadRequestException('Trop d\'IDs (max 100)');
-    
+    if (ids.length > 100) throw new BadRequestException("Trop d'IDs (max 100)");
     return this.userRepository.findByIds(ids);
   }
 
-  
   @Get('guardian/:guardianId/players')
   @Roles(Role.Admin, Role.Super_Admin)
   async getPlayersByGuardian(@Param('guardianId') guardianId: string) {
@@ -129,33 +163,43 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles(Role.Super_Admin, Role.Admin, Role.Parent)
   async getUsersByRole(@GetUser() authUser: any, @Param('role') role: 'player' | 'parent' | 'admin') {
-    if (authUser.role == 'super_admin'){
-    if (!['player', 'parent', 'admin'].includes(role)) {
-      throw new BadRequestException('Rôle invalide');
+    // Vérification des droits
+    if (authUser.role === 'super_admin') {
+      if (!['player', 'parent', 'admin'].includes(role)) {
+        throw new BadRequestException('Rôle invalide');
+      }
+    } else if (authUser.role === 'admin' || authUser.role === 'parent') {
+      if (!['player', 'parent'].includes(role)) {
+        throw new BadRequestException('Rôle invalide');
+      }
+    } else {
+      throw new UnauthorizedException('Accès non autorisé');
     }
-  } else if ((authUser.role == 'admin' || 'parent')) {
-    if (!['player', 'parent'].includes(role)) {
-      throw new BadRequestException('Rôle invalide');
-    }
-  }
-    return this.userRepository.findByRole(role);
+    // Utilisation du service avec filtres
+    return this.userService.findUsers({ role });
   }
 
   @Get(':role/:id')
   @UseGuards(RolesGuard)
   @Roles(Role.Super_Admin, Role.Admin, Role.Parent)
-  async getUserByRoleAndId(@GetUser() authUser: any, @Param('role') role: 'player' | 'parent' | 'admin', @Param('id') id: number) {
-    if (authUser.role == 'super_admin'){
-    if (!['player', 'parent', 'admin'].includes(role)) {
-      throw new BadRequestException('Rôle invalide');
+  async getUserByRoleAndId(
+    @GetUser() authUser: any,
+    @Param('role') role: 'player' | 'parent' | 'admin',
+    @Param('id') id: number,
+  ) {
+    if (authUser.role === 'super_admin') {
+      if (!['player', 'parent', 'admin'].includes(role)) {
+        throw new BadRequestException('Rôle invalide');
+      }
+    } else if (authUser.role === 'admin' || authUser.role === 'parent') {
+      if (!['player', 'parent'].includes(role)) {
+        throw new BadRequestException('Rôle invalide');
+      }
+    } else {
+      throw new UnauthorizedException('Accès non autorisé');
     }
-  } else if ((authUser.role == 'admin' || 'parent')) {
-    if (!['player', 'parent'].includes(role)) {
-      throw new BadRequestException('Rôle invalide');
-    }
-  }
     return this.userService.findByRoleAndId(id, role);
-  } 
+  }
 
   @Patch(':userId/validate-registration')
   @AdminOnly()
@@ -163,7 +207,6 @@ export class UserController {
     const id = parseInt(userId, 10);
     const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
-
     await this.userRepository.update(id, { registrationStatus: 'inscrit' });
     return { message: 'Inscription validée' };
   }
@@ -174,45 +217,41 @@ export class UserController {
     const id = parseInt(userId, 10);
     await this.userRepository.update(id, { registrationStatus: 'rejeté' });
     return { message: 'Inscription rejetée' };
-  }z
+  }
 
-  // ========== AUTHENTIFIED USER (profil) ==========
+  // ============================================================
+  // ACCÈS À UN UTILISATEUR SPÉCIFIQUE (avec restrictions)
+  // ============================================================
 
   @Get(':userId')
   @UseGuards(RolesGuard)
   @Roles(Role.Parent, Role.Player, Role.Admin, Role.Super_Admin)
-  async getUser(
-    @GetUser() authUser: any,
-    @Param('userId') userId: string,
-  ) {
+  async getUser(@GetUser() authUser: any, @Param('userId') userId: string) {
     const targetId = parseInt(userId, 10);
     const isAdmin = ['admin', 'super_admin'].includes(authUser.role);
 
-    // Seul l'admin ou l'utilisateur lui-même peut voir le profil
     if (!isAdmin && authUser.id !== targetId) {
-      // Tu peux lever une exception ou retourner une version restreinte
       return this.userService.getUserRestricted(targetId);
     }
-
     return this.userService.findById(targetId);
   }
 
-  // ========== MISE À JOUR ==========
+  // ============================================================
+  // MISE À JOUR (admin / self)
+  // ============================================================
 
   @Patch(':userId')
   @HttpCode(HttpStatus.OK)
-  async updateUser(@Param('userId') userId: string, @Body() input: any) {
+  @AllRoles()
+  async updateUser(@Param('userId') userId: string, @Body() input: UpdateProfileDto) {
     return this.userService.updateProfile(parseInt(userId, 10), input);
   }
 
   @Patch(':userId/change-password')
   @HttpCode(HttpStatus.OK)
+  @AllRoles()
   async changePassword(@Param('userId') userId: string, @Body() input: any) {
     const { oldPassword, newPassword } = input;
-    return this.userService.changePassword(
-      parseInt(userId, 10),
-      oldPassword,
-      newPassword,
-    );
+    return this.userService.changePassword(parseInt(userId, 10), oldPassword, newPassword);
   }
 }

@@ -11,6 +11,7 @@ export type DocumentTypeFilters = {
   event?: string;
   names?: string[]; // pour plusieurs noms (IN)
   isActive?: boolean;
+  isPhoto?: boolean;
   isObligatory?: boolean;
   applicableCategories?: string | string[]; // peut être un seul ou plusieurs
   search?: string; // recherche dans name et description
@@ -38,6 +39,11 @@ export class DocumentTypeRepository {
     if (filters.isActive !== undefined) {
       conditions.push(eq(documentTypes.isActive, filters.isActive));
     }
+
+    if (filters.isPhoto !== undefined) {
+      conditions.push(eq(documentTypes.isPhoto, filters.isPhoto));
+    }
+
     if (filters.isObligatory !== undefined) {
       conditions.push(eq(documentTypes.isObligatory, filters.isObligatory));
     }
