@@ -56,12 +56,13 @@ export class DocumentService {
   if (existingDoc) {
     await this.documentRepository.delete(existingDoc.id);
   }
-
-  // 3. Upload du nouveau fichier
-  const uploaded_file = await this.fileUpload(file);
-
-  // 4. Récupérer le type de document
+  // 3. Récupérer le type de document
   const docType = await this.getDocumentTypeByName(file.filetype);
+
+  // 4. Upload du nouveau fichier
+  const uploaded_file = await this.fileUpload(file, docType.name);
+
+  
 
   // 5. Créer l'entrée en base
   const document_created = await this.create({
@@ -81,13 +82,13 @@ export class DocumentService {
     buffer: Buffer;
     filename: string;
     mimetype: string;
-  }): Promise<{ fileId: string; fileUrl: string }> {
+  }, type: string): Promise<{ fileId: string; fileUrl: string }> {
     const { buffer, filename, mimetype } = file;
     const uploadedFile = await this.s3Service.uploadFile(
       buffer,
       filename,
       mimetype,
-      'documents'
+      `documents/${type}`
     );
     // uploadedFile contient : { key, url }
     return {

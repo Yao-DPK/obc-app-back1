@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks":[
+        {
+            "label": "Attaching tmux associated pane from main session",
+            "type": "shell",
+            "command": "tmux new -s obc-dev/api",
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+
+}

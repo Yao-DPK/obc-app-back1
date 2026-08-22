@@ -8,9 +8,15 @@ import { ConfigService } from '@nestjs/config';
 export class S3Service {
   private readonly logger = new Logger(S3Service.name);
   private s3Client: S3Client;
+  private isLocal: boolean; 
+  private bucketName: string | undefined;
+  private publicUrl: string | undefined;
 
   constructor(private configService: ConfigService) {
     const region = this.configService.get('AWS_REGION');
+    this.isLocal = this.configService.get('CURRENT_ENV') == 'LOCAL';
+    this.bucketName = this.isLocal ? this.configService.get('AWS_S3_BUCKET_TEST_NAME') : this.configService.get('AWS_S3_BUCKET_NAME');
+    this.publicUrl = this.isLocal ? this.configService.get('AWS_S3_PUBLIC_TEST_URL') : this.configService.get('AWS_S3_PUBLIC_URL');
     const accessKeyId = this.configService.get('AWS_ACCESS_KEY_ID');
     const secretAccessKey = this.configService.get('AWS_SECRET_ACCESS_KEY');
 
@@ -23,6 +29,9 @@ export class S3Service {
         credentials: { accessKeyId, secretAccessKey },
     });
   }
+
+  
+
 
   // ========== UPLOAD ==========
 
@@ -59,7 +68,7 @@ export class S3Service {
 
   async deleteFile(key: string): Promise<void> {
     const command = new DeleteObjectCommand({
-      Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+      Bucket: this.bucketName,
       Key: key,
     });
 
