@@ -11,11 +11,11 @@ CREATE TABLE "events" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "payment_obligations" DROP CONSTRAINT "payment_obligations_player_id_players_id_fk";
+ALTER TABLE "payment_obligations" DROP CONSTRAINT IF EXISTS "payment_obligations_player_id_players_id_fk";
 --> statement-breakpoint
 ALTER TABLE "users" ALTER COLUMN "first_name" SET DEFAULT '';--> statement-breakpoint
 ALTER TABLE "users" ALTER COLUMN "last_name" SET DEFAULT '';--> statement-breakpoint
 ALTER TABLE "payment_obligations" ALTER COLUMN "due_date" SET DATA TYPE timestamp;--> statement-breakpoint
 ALTER TABLE "payment_obligations" ALTER COLUMN "description" SET DEFAULT '';--> statement-breakpoint
-ALTER TABLE "refresh_tokens" ALTER COLUMN "family_id" SET DEFAULT '4a885f2a-e97e-4278-9ea1-2a6a7b2c98a0';--> statement-breakpoint
-ALTER TABLE "payment_obligations" ADD CONSTRAINT "payment_obligations_player_id_users_id_fk" FOREIGN KEY ("player_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+ALTER TABLE "refresh_tokens" ALTER COLUMN "family_id" SET DEFAULT gen_random_uuid();
