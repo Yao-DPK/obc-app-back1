@@ -28,7 +28,6 @@ export const UpdateProfileSchema = UserInsertSchema.partial().extend({
   class: z.string().optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
-  registrationStep: z.string().optional(),
   attestationData: z.object({
     signatoryType: z.enum(['self', 'guardian']),
     selectedGuardianIndex: z.number().optional(),

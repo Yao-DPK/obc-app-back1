@@ -89,7 +89,6 @@ export class InscriptionService {
     class: step1.class,
     emergencyContactName: step1.emergencyContactName,
     emergencyContactPhone: step1.emergencyContactPhone,
-    registrationStep: 'attestation_signee',
     attestationData: {
       signatoryType: step2.signatoryType,
       selectedGuardianIndex: step2.selectedGuardianIndex,
