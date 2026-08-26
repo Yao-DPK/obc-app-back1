@@ -16,6 +16,7 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -23,7 +24,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
-import { UserRepository } from './user.repository';
+import { UserFilters, UserRepository } from './user.repository';
 import { AllRoles } from '../common/decorators/all-roles.decorator';
 import type { UpdateProfileDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -135,10 +136,27 @@ export class UserController {
 
   @Get()
   @AdminOnly()
-  async getUsers() {
-    // Utilise le service pour omettre les mots de passe
-    return this.userService.findUsers();
+  async getUsers(
+    @Query('role') role?: "parent" | "player" | "admin" | "super_admin",
+    @Query('search') search?: string,
+    @Query('isVerified') isVerified?: string,
+    @Query('registrationStatus') registrationStatus?: string,
+    @Query('createdFrom') createdFrom?: string,
+    @Query('createdTo') createdTo?: string,
+  ) {
+    // Construire l'objet de filtres
+    const filters: UserFilters = {};
+
+    if (role) filters.role = role;
+    if (search) filters.search = search;
+    if (isVerified !== undefined) filters.isVerified = isVerified === 'true';
+    if (registrationStatus) filters.registrationStatus = registrationStatus;
+    if (createdFrom) filters.createdFrom = createdFrom;
+    if (createdTo) filters.createdTo = createdTo;
+
+    return this.userService.findUsers(filters);
   }
+
 
   @Post('batch')
   @AdminOnly()
