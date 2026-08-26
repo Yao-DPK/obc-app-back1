@@ -101,7 +101,7 @@ export class DocumentController {
     const document = await this.documentService.find({id: Number(id)});
     if (!document) throw new NotFoundException("You can't find me");
     // Vérifier que l'utilisateur a le droit de voir ce document
-    if (document.userId !== user.id && !['admin', 'super_admin'].includes(user.role)) {
+    if (document.userId !== user.id && !['parent', 'admin', 'super_admin'].includes(user.role)) {
       throw new UnauthorizedException("You can't see me");
     }
 
