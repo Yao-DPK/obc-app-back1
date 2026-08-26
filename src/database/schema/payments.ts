@@ -11,7 +11,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { players, users } from './users';
-import { KayDevMetadata } from '../../types/payment.types';
+import { KayDevMetadata, NormalPaymentMetadata } from '../../types/payment.types';
 
 
 
@@ -44,7 +44,7 @@ export const paymentIntents = pgTable('payment_intents', {
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   method: varchar('method', { length: 20 }).notNull(), // wave, orange_money, card
   transactionReference: varchar('transaction_reference', { length: 100 }),
-  transactionMetadata: jsonb('transaction_metadata').$type<KayDevMetadata>(),
+  transactionMetadata: jsonb('transaction_metadata').$type<KayDevMetadata | NormalPaymentMetadata>(),
   status: varchar('status', { length: 20 })
     .default('pending')
     .notNull(), // pending, paid, failed, expired
@@ -61,7 +61,7 @@ export const paymentIntents = pgTable('payment_intents', {
 export type PayIntentInsert = typeof paymentIntents.$inferInsert;
 export type PayIntentSelect = typeof paymentIntents.$inferSelect;
 
-
+ 
 /* Stocke l'avancée des paiements */
 export const paymentObligations = pgTable('payment_obligations', {
   id: serial('id').primaryKey(),

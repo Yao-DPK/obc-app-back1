@@ -12,6 +12,11 @@ import {
   ParseIntPipe,
   Query,
   Delete,
+  UseInterceptors,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+  UploadedFile,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import type {
@@ -20,6 +25,7 @@ import type {
   CreatePaymentEventDto,
   PaymentObligation,
   UpdatePaymentEventDto,
+  VerifyIntentDto,
   VerifyPaymentDto,
 } from './payment.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -29,11 +35,16 @@ import { GetUser } from '../common/decorators/get-user.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { AllRoles } from '../common/decorators/all-roles.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { PaymentIntentService } from './payment-intent.service';
 
 @Controller('payments')
 @UseGuards(RolesGuard)
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService, 
+    private readonly paymentIntentService: PaymentIntentService
+  ) {}
 
   // ============================================================
   // ÉVÉNEMENTS (public / parent)
@@ -108,32 +119,76 @@ export class PaymentController {
   // INTENTIONS DE PAIEMENT (parent)
   // ============================================================
 
+/* // ============================================================
+  // CRÉATION (PARENT)
+  // ============================================================
+
   @Post('intents')
   @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
-  @HttpCode(HttpStatus.CREATED)
-  async createIntent(
-    @GetUser('id') userId: number,
+  @UseInterceptors(FileInterceptor('screenshot'))
+  async create(
+    @GetUser() user: any,
     @Body() dto: CreateIntentDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5 Mo
+          new FileTypeValidator({ fileType: /^image\/(jpeg|png|jpg)$/ }),
+        ],
+      }),
+    )
+    screenshot: Express.Multer.File,
   ) {
-    return this.paymentService.createIntent(userId, dto);
+    return this.paymentIntentService.create(user.id, dto, screenshot);
   }
 
-  @Get('intents')
+  // ============================================================
+  // LISTE DES INTENTIONS D'UNE OBLIGATION (PARENT, ADMIN)
+  // ============================================================
+
+  @Get('intents/obligation/:obligationId')
   @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
-  async getMyIntents(@GetUser('id') userId: number) {
-    return this.paymentService.getIntentsByUser(userId);
+  async getByObligation(
+    @GetUser() user: any,
+    @Param('obligationId', ParseIntPipe) obligationId: number,
+  ) {
+    // TODO: Vérifier que le parent a le droit de voir cette obligation
+    return this.paymentIntentService.getByObligation(obligationId, user.id);
   }
+
+  // ============================================================
+  // LISTE DES INTENTIONS EN ATTENTE (ADMIN)
+  // ============================================================
+
+  @Get('intents/pending')
+  @AdminOnly()
+  async getPending() {
+    return this.paymentIntentService.getPendingForAdmin();
+  }
+
+  // ============================================================
+  // DÉTAIL D'UNE INTENTION (ADMIN)
+  // ============================================================
 
   @Get('intents/:id')
-  @Roles(Role.Parent, Role.Admin, Role.Super_Admin)
-  async getIntentById(@Param('id', ParseIntPipe) id: number) {
-    return this.paymentService.getIntentById(id);
+  @Roles(Role.Admin, Role.Super_Admin, Role.Parent)
+  async getById(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentIntentService.getById(id);
   }
 
-  @Get('intents/reference/:ref')
-  @Roles(Role.Admin, Role.Super_Admin)
-  async getIntentByReference(@Param('ref') ref: string) {
-    return this.paymentService.getTransactionByReference(ref);
+  // ============================================================
+  // VÉRIFICATION (ADMIN)
+  // ============================================================
+
+  @Patch(':id/verify')
+  @AdminOnly()
+  @HttpCode(HttpStatus.OK)
+  async verify(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() admin: any,
+    @Body() dto: VerifyIntentDto,
+  ) {
+    return this.paymentIntentService.verify(id, admin.id, dto);
   }
 
   // ============================================================
@@ -149,7 +204,7 @@ export class PaymentController {
   ) {
     return this.paymentService.verifyPayment(adminId, dto);
   }
-
+ */
   // ============================================================
   // RÉSUMÉ (parent)
   // ============================================================

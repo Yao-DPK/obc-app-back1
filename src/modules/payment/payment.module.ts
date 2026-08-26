@@ -8,11 +8,15 @@ import { PaymentService } from './payment.service';
 import { PaymentIntentRepository } from './payment-intent.repository';
 import { PaymentEventRepository } from './payment-event.repository';
 import { PaymentController } from './payment.controller';
+import { PaymentIntentService } from './payment-intent.service';
+import { S3Module } from '../s3/s3.module';
+import { PaymentIntentController } from './payment-intents.controller';
 
 
 @Module({
-  providers: [KadevWebhookService, PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService],
-  exports: [PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService],
-  controllers: [KadevWebhookController, PaymentController],
+  imports: [S3Module],
+  providers: [KadevWebhookService, PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService, PaymentIntentService],
+  exports: [PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService, PaymentIntentService],
+  controllers: [KadevWebhookController, PaymentController, PaymentIntentController],
 })
 export class PaymentModule {}

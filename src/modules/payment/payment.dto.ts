@@ -28,6 +28,7 @@ export const IntentInsertSchema = createInsertSchema(paymentIntents).omit({
   createdAt: true,
 });
 
+
 export type CreateIntentDto = z.infer<typeof IntentInsertSchema>;
 export type PaymentIntent = z.infer<typeof IntentSelectSchema>;
 
@@ -40,7 +41,24 @@ export const VerifyPaymentSchema = z.object({
   status: z.enum(['verified', 'rejected']),
 });
 
+export const VerifyIntentSchema = z.object({
+  status: z.enum(['paid', 'failed']),
+  rejectionReason: z.string().optional(),
+});
+
 export type VerifyPaymentDto = z.infer<typeof VerifyPaymentSchema>;
+export type VerifyIntentDto = z.infer<typeof VerifyIntentSchema>;
+
+// ========== SCHÉMA DE RÉPONSE (avec détails) ==========
+
+export const IntentResponseSchema = IntentSelectSchema.extend({
+  obligationDescription: z.string().optional(),
+  playerName: z.string().optional(),
+  signedJustificationUrl: z.string().optional(),
+});
+
+export type IntentResponseDto = z.infer<typeof IntentResponseSchema>;
+
 
 // ============================================================
 // ÉVÉNEMENTS DE PAIEMENT

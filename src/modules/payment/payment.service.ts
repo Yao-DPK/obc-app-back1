@@ -124,7 +124,7 @@ export class PaymentService {
     const obligation = await this.obligationRepo.findById(obligationId);
     if (!obligation) throw new NotFoundException('Obligation non trouvée');
 
-    const intents = await this.intentRepo.findByObligation(obligationId);
+    const intents = await this.intentRepo.findMany({obligationId: obligationId});
 
     return {
       ...obligation,
@@ -200,11 +200,11 @@ export class PaymentService {
   }
 
   async getAllIntents() {
-  return this.intentRepo.findAll(); // méthode à ajouter dans le repository
+  return this.intentRepo.findMany(); // méthode à ajouter dans le repository
   }
 
   async getIntentsByUser(userId: number) {
-    return this.intentRepo.findByUser(userId);
+    return this.intentRepo.findMany({userId: userId});
   }
 
   async getIntentById(id: number) {
@@ -311,11 +311,11 @@ export class PaymentService {
 
   // ========== UTILITAIRES ==========
 
-  async getTransactionByReference(ref: string) {
+  /* async getTransactionByReference(ref: string) {
     const intent = await this.intentRepo.findByTransactionReference(ref);
     if (!intent) throw new NotFoundException('Transaction non trouvée');
     return intent;
-  }
+  } */
 
   async cancelObligation(obligationId: number, userId: number) {
     const obligation = await this.obligationRepo.findById(obligationId);
@@ -327,7 +327,7 @@ export class PaymentService {
     }
 
     // Vérifier qu'aucun intent n'est en cours
-    const intents = await this.intentRepo.findByObligation(obligationId);
+    const intents = await this.intentRepo.findMany({obligationId: obligationId});
     const hasPending = intents.some((i) => i.status === 'pending');
     if (hasPending) {
       throw new BadRequestException('Un paiement est en cours pour cette obligation');

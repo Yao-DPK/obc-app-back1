@@ -119,6 +119,7 @@ export class UserController {
     @UploadedFile(ResizeAvatarPipe) resizedBuffer: Buffer,
     @GetUser() authUser: any,
   ) {
+    console.log('New Photo is updating');
     const uploadedDocument = await this.documentService.userFileupload(authUser.id, {
       ...file,
       buffer: resizedBuffer,

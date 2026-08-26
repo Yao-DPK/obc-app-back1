@@ -57,6 +57,13 @@
       "when": 1787366406913,
       "tag": "0007_wealthy_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787667809281,
+      "tag": "0008_majestic_shooting_star",
+      "breakpoints": true
     }
   ]
 }

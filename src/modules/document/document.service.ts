@@ -92,7 +92,7 @@ export class DocumentService {
     );
     // uploadedFile contient : { key, url }
     return {
-      fileId: uploadedFile.key,          // ✅ ID unique Google Drive
+      fileId: uploadedFile.key,          // ✅ ID unique 
       fileUrl: uploadedFile.url, // ✅ Lien de visualisation
     };
   }
