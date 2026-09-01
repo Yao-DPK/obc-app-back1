@@ -1,6 +1,6 @@
 // src/modules/payment/payment.service.ts
 import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { PaymentEventRepository } from './payment-event.repository';
+import { PaymentEventFilters, PaymentEventRepository } from './payment-event.repository';
 import { PaymentObligationRepository } from './payment-obligation.repository';
 import { PaymentIntentRepository } from './payment-intent.repository';
 import {
@@ -13,6 +13,7 @@ import {
   PaymentEvent,
   UpdateObligationDto,
 } from './payment.dto';
+import { PayEventSelect, PayObligationSelect } from '@/database/db';
 
 @Injectable()
 export class PaymentService {
@@ -27,6 +28,19 @@ export class PaymentService {
   async getActiveEvents() {
     return this.eventRepo.findAllActive();
   }
+
+  async getMany(
+      filters?: PaymentEventFilters,
+      options?: {
+        orderBy?: 'name' | 'amount' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt';
+        order?: 'ASC' | 'DESC';
+        limit?: number;
+        offset?: number;
+      }
+    ): Promise<PayEventSelect[]> {
+      const result = await this.eventRepo.findMany(filters, options)
+      return result;
+    }
 
   async getEventById(id: number) {
     const event = await this.eventRepo.findById(id);
@@ -52,6 +66,13 @@ export class PaymentService {
     const created = await this.eventRepo.create(dto);
     return PaymentEventSelectSchema.parse(created);
   }
+
+  async createEventIfNotExists(
+      data: CreateObligationDto,
+    ): Promise<{ created: boolean; obligation: PayObligationSelect | null }> {
+      const result = await this.obligationRepo.createIfNotExists(data);
+      return result;
+    }
 
   async updateEvent(id: number, dto: UpdatePaymentEventDto): Promise<PaymentEvent> {
     const event = await this.eventRepo.findById(id);

@@ -1,45 +1,59 @@
-# ---------- Étape de développement ----------
-FROM node:alpine AS development
+# ============================================================
+# STAGE 1 – Base
+# ============================================================
+FROM node:22-alpine AS base
+RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+WORKDIR /app
 
-WORKDIR /usr/src/app
-
-# Installer pnpm
-RUN npm install -g pnpm
-
-# Copier uniquement les fichiers de dépendances (pour bénéficier du cache Docker)
-COPY package.json ./
-
-# Installer toutes les dépendances (y compris devDependencies)
+# ============================================================
+# STAGE 2 – Dependencies (cache des dépendances)
+# ============================================================
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+#COPY packages/database/package.json ./packages/database/
+#COPY packages/tsconfig/package.json ./packages/tsconfig/
 RUN pnpm install
 
-# Copier le reste du code source
-COPY . .
+# ============================================================
+# STAGE 3 – Builder (build de l'API)
+# ============================================================
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+# COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 
-# Compiler l'application NestJS
-RUN pnpm build
+# Copier le code source
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json ./
+COPY apps/api ./apps/api
+COPY packages ./packages
 
-# ---------- Étape de production ----------
-FROM node:alpine AS production
+# Build
+RUN pnpm --filter @obc-app/api build
 
-WORKDIR /usr/src/app
+# ============================================================
+# STAGE 4 – Runner (image finale, légère)
+# ============================================================
+FROM node:22-alpine AS runner
+WORKDIR /app
 
-# Installer pnpm
-RUN npm install -g pnpm
+# Créer un utilisateur non-root
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
 
-# Copier les fichiers de dépendances
-COPY package.json ./
+# Copier uniquement le nécessaire
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./package.json
 
-# Installer uniquement les dépendances de production
-RUN pnpm install --prod
+USER nestjs
 
-# Copier le code compilé depuis l'étape de développement
-COPY --from=development /usr/src/app/dist ./dist
-
-# Si vous avez des fichiers statiques (ex: .env, views, etc.), copiez-les explicitement
-# COPY --from=development /usr/src/app/src/views ./dist/views
-
-# Exposer le port (par défaut 3031, ajustez selon votre besoin)
 EXPOSE 3031
 
-# Démarrer l'application
-CMD ["node", "dist/src/main"]
+ENV NODE_ENV=production
+ENV PORT=3031
+
+CMD ["node", "dist/src/main.js"]

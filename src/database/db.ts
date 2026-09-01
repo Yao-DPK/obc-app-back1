@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 // Charger les variables d'environnement
 

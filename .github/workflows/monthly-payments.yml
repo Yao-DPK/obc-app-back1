@@ -1,0 +1,56 @@
+# .github/workflows/monthly-payments.yml
+name: Monthly Payments Generation
+
+on:
+  schedule:
+    # 2 du mois à 02h02 UTC (pas de décalage pour Abidjan UTC+0)
+    - cron: '2 2 2 * *'
+  workflow_dispatch:
+    inputs:
+      month:
+        description: 'Mois à générer (YYYY-MM). Laisser vide pour le mois précédent.'
+        required: false
+        type: string
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Call API endpoint
+        id: call
+        run: |
+          MONTH="${{ github.event.inputs.month }}"
+
+          if [ -z "$MONTH" ]; then
+            BODY='{}'
+          else
+            BODY="{\"month\":\"$MONTH\"}"
+          fi
+
+          echo "📤 Envoi: $BODY"
+
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly-payments" \
+            -H "Authorization: Bearer ${{ secrets.API_ADMIN_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "$BODY")
+
+          echo "📥 Réponse (HTTP $HTTP_CODE) :"
+          cat /tmp/response.json
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Échec (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+          # Extraire les compteurs pour les logs
+          CREATED=$(jq -r '.created // 0' /tmp/response.json)
+          SKIPPED=$(jq -r '.skipped // 0' /tmp/response.json)
+          echo "✅ Créées: $CREATED | Skipped: $SKIPPED"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Le job a échoué. Vérifier les logs et relancer manuellement si besoin."

@@ -9,6 +9,7 @@ import {
   boolean,
   date,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { players, users } from './users';
 import { KayDevMetadata, NormalPaymentMetadata } from '../../types/payment.types';
@@ -27,6 +28,11 @@ export const paymentEvents = pgTable('payment_events', {
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+
+  // 👇 NOUVEAUX CHAMPS
+  isRecurringMonthly: boolean('is_recurring_monthly').default(false).notNull(),
+  isApplicableAtRegistration: boolean('is_applicable_at_registration').default(true).notNull(),
+  excludedMonths: jsonb('excluded_months').$type<number[]>().default([]).notNull(), // excludedMonths = [7, 8] pour exclure juillet et août
 });
 
 export type PayEventInsert = typeof paymentEvents.$inferInsert;
@@ -75,6 +81,10 @@ export const paymentObligations = pgTable('payment_obligations', {
   remainingAmount: decimal('remaining_amount', { precision: 10, scale: 2 }).$type<number>(), // calculable, stocké pour requêtes
   dueDate: timestamp('due_date'),
   description: varchar('description', { length: 255 }).default(''),
+  periodKey: varchar('period_key', { length: 50 }),
+  // "2026-10" pour les mensualités
+  // "saison-2026-2027" pour l'inscription annuelle
+  // "event-42-2026" pour un camp 2026
   status: varchar('status', { length: 20 })
     .default('pending')
     .notNull(), // pending, partial, paid, overdue, cancelled
@@ -82,7 +92,9 @@ export const paymentObligations = pgTable('payment_obligations', {
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
   statusIdx: index('pay_oblig_status_idx').on(table.status),
-  eventIdx: index('pay_oblig_event_idx').on(table.eventId)
+  eventIdx: index('pay_oblig_event_idx').on(table.eventId),
+  uniquePeriodIdx: uniqueIndex('pay_oblig_period_unique')
+    .on(table.playerId, table.eventId, table.periodKey),
 }));
 
 

@@ -18,10 +18,12 @@ import { UserInsert } from '../../database/db';
 // ============================================================
 // FILTRES DYNAMIQUES
 // ============================================================
+export type Role = "parent" | "player" | "admin" | "super_admin"
+
 export type UserFilters = {
   id?: number;
   email?: string;
-  role?: "parent" | "player" | "admin" | "super_admin"  | "parent" | "player" | "admin" | "super_admin" []; // single or multiple roles
+  role?: Role  | Role[]; // single or multiple roles
   firstName?: string;
   lastName?: string;
   phone?: string;

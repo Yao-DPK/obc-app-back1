@@ -64,6 +64,41 @@
       "when": 1787667809281,
       "tag": "0008_majestic_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788272847777,
+      "tag": "0009_regular_enchantress",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793010562672,
+      "tag": "0010_chief_inertia",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793382245522,
+      "tag": "0011_groovy_black_bird",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793626477532,
+      "tag": "0012_cuddly_the_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793628293967,
+      "tag": "0013_free_midnight",
+      "breakpoints": true
     }
   ]
 }
