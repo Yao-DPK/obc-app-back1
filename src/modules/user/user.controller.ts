@@ -157,6 +157,14 @@ export class UserController {
     return this.userService.findUsers(filters);
   }
 
+  @Get(':id')
+  @AdminOnly()
+  async getUserById(
+    @Param('id') id :string 
+  ) {
+    return this.userService.findById(Number(id));
+  }
+
 
   @Post('batch')
   @AdminOnly()

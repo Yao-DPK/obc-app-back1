@@ -1,10 +1,10 @@
 // src/modules/payment/services/payment-intent.service.ts
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PaymentIntentRepository } from './payment-intent.repository';
+import { IntentFilters, PaymentIntentRepository } from './payment-intent.repository';
 import { PaymentObligationRepository } from './payment-obligation.repository';
 import { randomUUID } from 'crypto';
 import { S3Service } from '../s3/s3.service';
-import { db } from '@/database/db';
+import { db, PayIntentSelect } from '@/database/db';
 import { CreateIntentDto, VerifyIntentDto } from './payment.dto';
 
 @Injectable()
@@ -68,8 +68,72 @@ export class PaymentIntentService {
 
   // ========== LECTURE ==========
 
+  async findIntents(filters?: IntentFilters): Promise<PayIntentSelect[]> {
+      const intents = await this.intentRepo.findMany(filters);
+      return await Promise.all(
+      intents.map(async (intent) => {
+        const metadata = intent.transactionMetadata as any;
+        let signedUrl = '';
+        if (metadata?.justificationId) {
+          signedUrl = await this.s3Service.getSignedUrl(metadata.justificationId, 300);
+          
+        }
+        return {
+          ...intent,
+          transactionMetadata: {
+            ...metadata,
+            signedJustificationUrl: signedUrl,
+          },
+        };
+      }),
+    );
+    }
+
+  async findIntent(filters?: IntentFilters): Promise<PayIntentSelect | null> {
+      const intent = await this.intentRepo.findOne(filters);
+      if (!intent){
+        throw new NotFoundException('Intention Introuvable');
+      }
+      const metadata = intent.transactionMetadata as any;
+        let signedUrl = '';
+        if (metadata?.justificationId) {
+          signedUrl = await this.s3Service.getSignedUrl(metadata.justificationId, 300);
+          
+        }
+        return {
+          ...intent,
+          transactionMetadata: {
+            ...metadata,
+            signedJustificationUrl: signedUrl,
+          },
+        };
+    }
+  
+
   async getByObligation(obligationId: number, userId?: number): Promise<any[]> {
     const intents = await this.intentRepo.findMany({ obligationId: obligationId });
+    // Enrichir avec les URLs signées pour les justificatifs
+    return await Promise.all(
+      intents.map(async (intent) => {
+        const metadata = intent.transactionMetadata as any;
+        let signedUrl = '';
+        if (metadata?.justificationId) {
+          signedUrl = await this.s3Service.getSignedUrl(metadata.justificationId, 300);
+          
+        }
+        return {
+          ...intent,
+          transactionMetadata: {
+            ...metadata,
+            signedJustificationUrl: signedUrl,
+          },
+        };
+      }),
+    );
+  }
+
+  async getByUserId(userId: number): Promise<any[]> {
+    const intents = await this.intentRepo.findMany({ userId: userId });
     // Enrichir avec les URLs signées pour les justificatifs
     console.log(`intents: ${intents}`);
     return await Promise.all(
@@ -96,7 +160,9 @@ export class PaymentIntentService {
       { status: 'pending' },
       { orderBy: 'createdAt', order: 'DESC' },
     );
-    return await this.enrichWithDetails(intents);
+    console.log(`intents: ${JSON.stringify(intents)}`);
+    const en_intents = await this.enrichWithDetails(intents);
+    return en_intents;
   }
 
   async getById(intentId: number): Promise<any> {

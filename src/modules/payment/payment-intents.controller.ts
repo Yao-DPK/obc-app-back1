@@ -1,4 +1,4 @@
-import { Body, Controller, FileTypeValidator, Get, HttpCode, HttpStatus, MaxFileSizeValidator, Param, ParseFilePipe, ParseIntPipe, Patch, Post, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, FileTypeValidator, Get, HttpCode, HttpStatus, MaxFileSizeValidator, Param, ParseFilePipe, ParseIntPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Role } from "../common/enums/role.enum";
 import { Roles } from "../common/decorators/roles.decorator";
@@ -9,6 +9,7 @@ import { PaymentService } from "./payment.service";
 import { PaymentIntentService } from "./payment-intent.service";
 import { AdminOnly } from "../common/decorators/admin-only.decorator";
 import { AllRoles } from "../common/decorators/all-roles.decorator";
+import { IntentFilters } from "./payment-intent.repository";
 
 @Controller('payments/intents')
 @UseGuards(RolesGuard)
@@ -45,7 +46,48 @@ export class PaymentIntentController{
       // ============================================================
       // LISTE DES INTENTIONS D'UNE OBLIGATION (PARENT, ADMIN)
       // ============================================================
-    
+      
+      @Get()
+      @AdminOnly()
+      async getIntents(
+        @Query('userId') userId?: string,
+        @Query('obligationId') obligationId?: string,
+        @Query('status') status?: string,
+        @Query('createdFrom') createdFrom?: string,
+        @Query('createdTo') createdTo?: string,
+      ) {
+        // Construire l'objet de filtres
+        const filters: IntentFilters = {};
+
+        if (userId) filters.userId = Number(userId);
+        if (obligationId) filters.obligationId = Number(obligationId);
+        if (status) filters.status = status;
+        if (createdFrom) filters.createdFrom = createdFrom;
+        if (createdTo) filters.createdTo = createdTo;
+
+        return this.paymentIntentService.findIntents(filters);
+      }
+
+      @Get()
+      @AdminOnly()
+      async getIntent(
+        @Query('userId') userId?: number,
+        @Query('obligationId') obligationId?: number,
+        @Query('createdFrom') createdFrom?: string,
+        @Query('createdTo') createdTo?: string,
+      ) {
+        // Construire l'objet de filtres
+        const filters: IntentFilters = {};
+
+        if (userId) filters.userId = userId;
+        if (obligationId) filters.obligationId = obligationId;
+        if (createdFrom) filters.createdFrom = createdFrom;
+        if (createdTo) filters.createdTo = createdTo;
+
+        return this.paymentIntentService.findIntent(filters);
+      }
+
+
       @Get('obligation/:obligationId')
       @AllRoles()
       async getByObligation(
@@ -54,14 +96,14 @@ export class PaymentIntentController{
       ) {
         // TODO: Vérifier que le parent a le droit de voir cette obligation
         const intents = await this.paymentIntentService.getByObligation(obligationId, user.id);
-        console.log(`intents: ${JSON.stringify(intents)}`);
         return intents
       }
-    
+
+      
       // ============================================================
       // LISTE DES INTENTIONS EN ATTENTE (ADMIN)
       // ============================================================
-    
+      
       @Get('pending')
       @AdminOnly()
       async getPending() {

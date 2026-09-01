@@ -58,9 +58,14 @@ export class UserService {
     return users.map(({ passwordHash, ...safe }) => safe);
   }
 
-  async findById(id: number): Promise<Omit<UserSelect, 'passwordHash'>> {
+  async findById(id: number) {
     const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    const safeUser = this.safe(user);
+    if (user.role === 'player') {
+      const playerDetails = await this.playerRepository.findByUserId(user.id);
+      return { ...safeUser, playerDetails };
+    }
     return this.safe(user);
   }
 
