@@ -21,6 +21,8 @@ export type PaymentEventFilters = {
   startDateTo?: Date | string;
   endDateFrom?: Date | string;
   endDateTo?: Date | string;
+  isRecurringMonthly?: boolean;
+  isApplicableAtRegistration?: boolean;
 };
 
 @Injectable()
@@ -39,6 +41,15 @@ export class PaymentEventRepository {
     if (filters.isActive !== undefined) {
       conditions.push(eq(paymentEvents.isActive, filters.isActive));
     }
+
+    if (filters.isRecurringMonthly !== undefined) {
+      conditions.push(eq(paymentEvents.isRecurringMonthly, filters.isRecurringMonthly));
+    }
+
+    if (filters.isApplicableAtRegistration !== undefined) {
+      conditions.push(eq(paymentEvents.isApplicableAtRegistration, filters.isApplicableAtRegistration));
+    }
+
     if (filters.allowInstallments !== undefined) {
       conditions.push(eq(paymentEvents.allowInstallments, filters.allowInstallments));
     }

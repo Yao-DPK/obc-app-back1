@@ -11,6 +11,7 @@ import { EmailService } from '../email/email.service';
 import { AuthService } from '../auth/auth.service';
 import { ConfigService } from '@nestjs/config';
 import { PaymentService } from '../payment/payment.service';
+import { RegistrationObligationService } from '../payment/registration-obligation.service';
 
 
 
@@ -25,6 +26,7 @@ export class InscriptionService {
     private emailService: EmailService,
     private authService: AuthService, 
     private configService: ConfigService,
+    private readonly registrationObligationService: RegistrationObligationService,
   ) {}
 
  async preRegister(
@@ -209,6 +211,8 @@ export class InscriptionService {
   });
   payment_obligations.push(annual_obligation);
 
+  const payments = await this.registrationObligationService.generateForRegistration(joueur.id, new Date());
+
   console.log(`10`);
   // 10. Envoi du mail au joueur(si mail fourni) afin de pouvoir créer son mot de passe et faire sa première connexion.
   await this.authService.firstLogin(joueur.id);
@@ -218,7 +222,7 @@ export class InscriptionService {
     player: playerData, 
     guardiansCreated, 
     filesUploaded,
-    payment_obligations,
+    payments,
     message: 'Inscription enregistrée. Les garants vont recevoir un email de confirmation.'
   };
 }
