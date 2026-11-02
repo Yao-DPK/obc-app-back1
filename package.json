@@ -14,14 +14,15 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node --max-old-space-size=2048 dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
+    "test": "TZ=UTC jest --config jest.config.ts",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:clear": "jest --config jest.config.ts --clearCache",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "jest --config test/jest-e2e.config.ts --runInBand",
+    "test:e2e:watch": "jest --config test/jest-e2e.config.ts --runInBand --watch",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "trpc:generate": "nestjs-trpc generate --input src/**/*.router.ts --output src/trpc/generated.ts"
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1111.0",
@@ -35,6 +36,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.2.1",
     "@nestjs/swagger": "^11.4.6",
+    "@testcontainers/postgresql": "^12.2.1",
     "@trpc/client": "^11.16.0",
     "@trpc/server": "^11.17.0",
     "@types/busboy": "^1.5.4",
@@ -62,6 +64,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sharp": "^0.35.3",
+    "testcontainers": "^12.2.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -88,7 +91,7 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^17.0.0",
-    "jest": "^30.0.0",
+    "jest": "^30.5.2",
     "jest-mock-extended": "^4.0.1",
     "opener": "^1.5.2",
     "prettier": "^3.4.2",
