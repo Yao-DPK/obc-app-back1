@@ -21,12 +21,22 @@ jobs:
       - name: Call API endpoint
         id: call
         run: |
-          echo "📤 POST ${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly/run"
+
+          MONTH="${{ github.event.inputs.month }}"
+
+          if [ -z "$MONTH" ]; then
+            BODY='{}'
+          else
+            BODY="{\"month\":\"$MONTH\"}"
+          fi
+
+          echo "📤 Envoi: $BODY"
 
           HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
-            -X POST "${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly/run" \
-            -H "x-service-token: ${{ secrets.API_SERVICE_TOKEN }}" \
-            -H "Content-Type: application/json")
+            -X POST "${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly-payments" \
+            -H "Authorization: Bearer ${{ secrets.API_ADMIN_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "$BODY")
 
           echo "📥 Réponse (HTTP $HTTP_CODE) :"
           cat /tmp/response.json
