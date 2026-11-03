@@ -160,6 +160,7 @@ export class PaymentEventRepository {
   // ========== MÉTHODES UTILITAIRES ==========
 
   async update(id: number, data: Partial<PayEventInsert>): Promise<PayEventSelect | null> {
+    
     const [updated] = await db
       .update(paymentEvents)
       .set({ ...data, updatedAt: new Date() })

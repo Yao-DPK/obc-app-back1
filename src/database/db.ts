@@ -40,6 +40,7 @@ export {
 export { drizzle } from 'drizzle-orm/node-postgres';
 
 export const db = drizzle(pool, { schema, /* logger: true */ }); //
+export type Database = typeof db;
 export * from './schema';
 
 //Décommenter le lignes 18 et 42 pour aider à trouver les erreurs db

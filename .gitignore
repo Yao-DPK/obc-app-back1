@@ -44,7 +44,12 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+<<<<<<< HEAD
 .env*
+=======
+*.env.*
+
+>>>>>>> a63d176 (feat: début génération paiements mensuels + tests d'intégration)
 
 # temp directory
 .temp
