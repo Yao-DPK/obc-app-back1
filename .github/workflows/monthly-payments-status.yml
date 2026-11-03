@@ -1,0 +1,68 @@
+# .github/workflows/monthly-payments-status.yml
+name: Monthly Payments – Status Check
+
+on:
+  schedule:
+    # 4 du mois à 06h00 UTC → laisse 2 jours de marge après le job du 2
+    - cron: '0 6 4 * *'
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check monthly job status
+        id: check
+        run: |
+          echo "🔍 Vérification du statut du mois M-1"
+
+          HTTP_CODE=$(curl -s -o /tmp/status.json -w "%{http_code}" \
+            "${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly/status-check" \
+            -H "x-service-token: ${{ secrets.API_SERVICE_TOKEN }}")
+
+          echo "📥 Réponse (HTTP $HTTP_CODE) :"
+          cat /tmp/status.json
+          echo ""
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Impossible de récupérer le statut (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+          TARGET_MONTH=$(jq -r '.targetMonth' /tmp/status.json)
+          EXEC_STATUS=$(jq -r '.execution.status // "missing"' /tmp/status.json)
+          UNRESOLVED=$(jq -r '.unresolvedFailed // 0' /tmp/status.json)
+
+          echo "📅 Mois cible : $TARGET_MONTH"
+          echo "📊 Statut exécution : $EXEC_STATUS"
+          echo "⚠️  Issues non résolues : $UNRESOLVED"
+
+          # Cas 1 : aucune exécution → le job du 2 n'a jamais tourné
+          if [ "$EXEC_STATUS" = "missing" ]; then
+            echo "🚨 AUCUNE EXÉCUTION POUR $TARGET_MONTH — le job du 2 a été manqué."
+            exit 1
+          fi
+
+          # Cas 2 : job encore en cours après 2 jours → probablement bloqué
+          if [ "$EXEC_STATUS" = "running" ]; then
+            echo "🚨 EXÉCUTION BLOQUÉE en 'running' depuis le 2 — à investiguer."
+            exit 1
+          fi
+
+          # Cas 3 : job échoué
+          if [ "$EXEC_STATUS" = "failed" ]; then
+            echo "🚨 EXÉCUTION EN ÉCHEC pour $TARGET_MONTH — voir la page admin/jobs."
+            exit 1
+          fi
+
+          # Cas 4 : succès avec issues non résolues → warning, pas d'échec
+          if [ "$UNRESOLVED" -gt 0 ]; then
+            echo "⚠️  EXÉCUTION RÉUSSIE mais $UNRESOLVED issue(s) échouée(s) non résolue(s)."
+            echo "   → Ces issues doivent être régénérées manuellement via admin/jobs."
+            # Ne pas fail : le job a tourné, c'est un état "partiel" acceptable
+            exit 0
+          fi
+
+          echo "✅ Tout est OK pour $TARGET_MONTH."

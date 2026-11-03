@@ -5,12 +5,7 @@ on:
   schedule:
     # 2 du mois à 02h02 UTC (pas de décalage pour Abidjan UTC+0)
     - cron: '2 2 2 * *'
-  workflow_dispatch:
-    inputs:
-      month:
-        description: 'Mois à générer (YYYY-MM). Laisser vide pour le mois précédent.'
-        required: false
-        type: string
+  workflow_dispatch: {}   # pas d'input : le mois cible est toujours M-1
 
 jobs:
   generate:
@@ -18,39 +13,45 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Call API endpoint
+      - name: Call API – monthly payments job
         id: call
         run: |
-          MONTH="${{ github.event.inputs.month }}"
-
-          if [ -z "$MONTH" ]; then
-            BODY='{}'
-          else
-            BODY="{\"month\":\"$MONTH\"}"
-          fi
-
-          echo "📤 Envoi: $BODY"
+          echo "📤 POST ${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly/run"
 
           HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
-            -X POST "${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly-payments" \
-            -H "Authorization: Bearer ${{ secrets.API_ADMIN_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "$BODY")
+            -X POST "${{ secrets.API_BASE_URL }}/api/admin/jobs/monthly/run" \
+            -H "x-service-token: ${{ secrets.API_SERVICE_TOKEN }}" \
+            -H "Content-Type: application/json")
 
           echo "📥 Réponse (HTTP $HTTP_CODE) :"
           cat /tmp/response.json
+          echo ""
+
+          # 409 = déjà généré pour ce mois → succès fonctionnel
+          if [ "$HTTP_CODE" -eq 409 ]; then
+            echo "ℹ️ Mensualités déjà générées pour ce mois — rien à faire."
+            exit 0
+          fi
 
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "❌ Échec (HTTP $HTTP_CODE)"
             exit 1
           fi
 
-          # Extraire les compteurs pour les logs
+          # Extraire les compteurs
           CREATED=$(jq -r '.created // 0' /tmp/response.json)
           SKIPPED=$(jq -r '.skipped // 0' /tmp/response.json)
-          echo "✅ Créées: $CREATED | Skipped: $SKIPPED"
+          FAILED=$(jq -r '.failed // 0' /tmp/response.json)
+
+          echo "✅ Créées: $CREATED | Sautées: $SKIPPED | Échouées: $FAILED"
+
+          # Si des issues ont échoué → marquer le job en échec partiel
+          if [ "$FAILED" -gt 0 ]; then
+            echo "⚠️ $FAILED issue(s) échouée(s) — vérifier la page admin/jobs."
+            # On n'exit pas en erreur : le job a bien tourné, les échecs sont attendus dans le flux
+          fi
 
       - name: Notify on failure
         if: failure()
         run: |
-          echo "❌ Le job a échoué. Vérifier les logs et relancer manuellement si besoin."
+          echo "❌ Le job a échoué. Vérifier les logs et relancer via workflow_dispatch ou la page admin/jobs."

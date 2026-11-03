@@ -141,11 +141,12 @@ export class DocumentController {
   @HttpCode(HttpStatus.OK)
   async validateDocument(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { adminId: number; status: 'Validé' | 'Rejeté' | 'Expiré' | 'Invalide'| 'En attente de Validation' }
+    @GetUser() admin: any,
+    @Body() body: { status: 'Validé' | 'Rejeté' | 'Expiré' | 'Invalide'| 'En attente de Validation' }
   ) {
     const validatedData = ValidateDocumentSchema.parse({
       documentId: id,
-      adminId: body.adminId,
+      adminId: admin.id,
       status: body.status,
     });
     return this.documentService.validateDocument(validatedData);
@@ -155,11 +156,12 @@ export class DocumentController {
   @HttpCode(HttpStatus.OK)
   async updateDocumentStatus(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { adminId: number; status: 'Validé' | 'Rejeté' | 'Expiré' | 'Invalide' }
+    @GetUser() admin: any,
+    @Body() body: { status: 'Validé' | 'Rejeté' | 'Expiré' | 'Invalide' }
   ) {
     const validatedData = ValidateDocumentSchema.parse({
       documentId: id,
-      adminId: body.adminId,
+      adminId: admin.id,
       status: body.status,
     });
     return this.documentService.validateDocument(validatedData);

@@ -44,7 +44,7 @@ export class S3Service {
     const key = folder ? `${folder}/${Date.now()}-${fileName}` : `${Date.now()}-${fileName}`;
 
     const command = new PutObjectCommand({
-      Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+      Bucket: this.bucketName,
       Key: key,
       Body: buffer,
       ContentType: mimeType,
@@ -67,6 +67,7 @@ export class S3Service {
   // ========== DELETE ==========
 
   async deleteFile(key: string): Promise<void> {
+
     const command = new DeleteObjectCommand({
       Bucket: this.bucketName,
       Key: key,
@@ -85,7 +86,7 @@ export class S3Service {
 
   async getSignedUrl(key: string, expiresInSeconds: number = 300): Promise<string> {
     const command = new GetObjectCommand({
-      Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+      Bucket: this.bucketName,
       Key: key,
     });
 
@@ -101,9 +102,11 @@ export class S3Service {
   // ========== VÉRIFICATION D'EXISTENCE ==========
 
   async fileExists(key: string): Promise<boolean> {
+        console.log(`vbucketName: ${this.bucketName}`);
+
     try {
       const command = new GetObjectCommand({
-        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+        Bucket: this.bucketName,
         Key: key,
       });
       await this.s3Client.send(command);

@@ -14,14 +14,15 @@ import { PaymentIntentController } from './payment-intents.controller';
 import { MonthlyPaymentService } from './monthly-payment.service';
 import { RegistrationObligationService } from './registration-obligation.service';
 import { UserModule } from '../user/user.module';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { databaseProvider } from '@/database/providers/database.providers';
+import { MonthlyJobRepository } from './monthly-job.repository';
+import { MonthlyJobController } from './monthly-job.controller';
 
 
 @Module({
   imports: [S3Module, UserModule],
-  providers: [KadevWebhookService, PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService, PaymentIntentService, MonthlyPaymentService, RegistrationObligationService, databaseProvider],
-  exports: [PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService, PaymentIntentService, MonthlyPaymentService, RegistrationObligationService, databaseProvider],
-  controllers: [KadevWebhookController, PaymentController, PaymentIntentController],
+  providers: [KadevWebhookService, PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService, PaymentIntentService, MonthlyPaymentService, RegistrationObligationService, MonthlyJobRepository, databaseProvider],
+  exports: [PaymentObligationRepository, PaymentIntentRepository, PaymentEventRepository, PaymentService, PaymentIntentService, MonthlyPaymentService, RegistrationObligationService, MonthlyJobRepository, databaseProvider],
+  controllers: [KadevWebhookController, PaymentController, PaymentIntentController, MonthlyJobController],
 })
 export class PaymentModule {}
