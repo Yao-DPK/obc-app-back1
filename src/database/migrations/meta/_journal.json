@@ -99,7 +99,6 @@
       "when": 1793628293967,
       "tag": "0013_free_midnight",
       "breakpoints": true
-<<<<<<< HEAD
     },
     {
       "idx": 14,
@@ -107,8 +106,6 @@
       "when": 1793700152871,
       "tag": "0014_tidy_hydra",
       "breakpoints": true
-=======
->>>>>>> a63d176 (feat: début génération paiements mensuels + tests d'intégration)
     }
   ]
 }
