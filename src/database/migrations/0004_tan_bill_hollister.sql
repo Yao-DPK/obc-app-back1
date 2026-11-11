@@ -1,5 +1,5 @@
 CREATE TYPE "public"."verification_token_type" AS ENUM('email_confirmation', 'password_reset', 'first_login', 'invite');--> statement-breakpoint
-CREATE TABLE "verification_tokens" (
+CREATE TABLE IF NOT EXISTS "verification_tokens" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"type" "verification_token_type" NOT NULL,

@@ -1,4 +1,4 @@
-CREATE TABLE "monthly_job_executions" (
+CREATE TABLE IF NOT EXISTS "monthly_job_executions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"target_month" varchar(7) NOT NULL,
 	"status" varchar(20) DEFAULT 'running' NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE "monthly_job_executions" (
 	"error" text
 );
 --> statement-breakpoint
-CREATE TABLE "monthly_job_issues" (
+CREATE TABLE IF NOT EXISTS "monthly_job_issues" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"execution_id" integer NOT NULL,
 	"player_id" integer NOT NULL,

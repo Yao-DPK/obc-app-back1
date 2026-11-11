@@ -18,9 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
-    /* TRPCModule.forRoot({
-      autoSchemaFile: './trpc',
-    }), */ AuthModule,
+    AuthModule,
     ConfigModule.forRoot({ isGlobal: true }),
     DocumentModule,
     UserModule,
