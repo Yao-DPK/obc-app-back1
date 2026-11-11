@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-CREATE TABLE "monthly_job_executions" (
-=======
+
 CREATE TABLE IF NOT EXISTS "monthly_job_executions" (
 >>>>>>> staging
 	"id" serial PRIMARY KEY NOT NULL,
@@ -17,9 +15,7 @@ CREATE TABLE IF NOT EXISTS "monthly_job_executions" (
 	"error" text
 );
 --> statement-breakpoint
-<<<<<<< HEAD
-CREATE TABLE "monthly_job_issues" (
-=======
+
 CREATE TABLE IF NOT EXISTS "monthly_job_issues" (
 >>>>>>> staging
 	"id" serial PRIMARY KEY NOT NULL,
