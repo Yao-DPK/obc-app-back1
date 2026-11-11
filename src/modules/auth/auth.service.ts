@@ -376,9 +376,9 @@ export class AuthService {
       }
 
       await this.userService.setPassword(guardian.id, password);
-      await this.userService.updateRegistrationStatus(guardian.id, 'parent_actif');
+      await this.userService.updateRegistrationStatus(guardian.id, 'parent_inscrit');
       await this.userService.updateVerificationStatus(guardian.id, true);
-    } else if (guardian.registrationStatus !== 'parent_actif') {
+    } else if (guardian.registrationStatus !== 'parent_inscrit') {
       throw new BadRequestException("Votre compte n'est pas actif");
     }
 

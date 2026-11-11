@@ -1,4 +1,4 @@
-CREATE TABLE "players" (
+CREATE TABLE  IF NOT EXISTS "players" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"birth_date" date,
@@ -12,7 +12,7 @@ CREATE TABLE "players" (
 	CONSTRAINT "players_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"password_hash" text NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "guardian_relationships" (
+CREATE TABLE IF NOT EXISTS "guardian_relationships" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "guardian_relationships_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"guardian_id" integer NOT NULL,
 	"player_id" integer NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE "guardian_relationships" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "audit_logs" (
+CREATE TABLE IF NOT EXISTS "audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer,
 	"action" varchar(255) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE "audit_logs" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "documents" (
+CREATE TABLE IF NOT EXISTS "documents" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"type" varchar(50) NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE "documents" (
 	"uploaded_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "payment_events" (
+CREATE TABLE IF NOT EXISTS "payment_events" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"description" varchar(500),
@@ -81,7 +81,7 @@ CREATE TABLE "payment_events" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "payment_intents" (
+CREATE TABLE IF NOT EXISTS "payment_intents" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"obligation_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE "payment_intents" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "payment_obligations" (
+CREATE TABLE IF NOT EXISTS "payment_obligations" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"event_id" integer NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE "payment_obligations" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "refresh_tokens" (
+CREATE TABLE IF NOT EXISTS "refresh_tokens" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"token" varchar(255) NOT NULL,
