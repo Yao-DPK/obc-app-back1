@@ -1,6 +1,5 @@
 
 CREATE TABLE IF NOT EXISTS "monthly_job_executions" (
->>>>>>> staging
 	"id" serial PRIMARY KEY NOT NULL,
 	"target_month" varchar(7) NOT NULL,
 	"status" varchar(20) DEFAULT 'running' NOT NULL,
@@ -17,7 +16,6 @@ CREATE TABLE IF NOT EXISTS "monthly_job_executions" (
 --> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS "monthly_job_issues" (
->>>>>>> staging
 	"id" serial PRIMARY KEY NOT NULL,
 	"execution_id" integer NOT NULL,
 	"player_id" integer NOT NULL,
