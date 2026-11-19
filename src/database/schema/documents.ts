@@ -9,6 +9,7 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
+import { db } from '../db';
 
 export const documents = pgTable('documents', {
   id: serial('id').primaryKey(),
@@ -51,3 +52,4 @@ export const documentTypes = pgTable('document_types', {
 
 export type DocumentTypeInsert = typeof documentTypes.$inferInsert;
 export type DocumentTypeSelect = typeof documentTypes.$inferSelect;
+
