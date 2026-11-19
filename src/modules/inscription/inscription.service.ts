@@ -190,7 +190,7 @@ export class InscriptionService {
   }
 
   console.log(`9`);
-  // 9. Ajout des paiements obligatoires à effectuer pour le joueur inscrit
+  /* // 9. Ajout des paiements obligatoires à effectuer pour le joueur inscrit
   let payment_obligations: any[] = [];
   // 9.1 Récupération des évenements de paiement à ajouter.
   // TODO : Faire une association entre évènement et type de paiement à effectuer; par exemple pour l'inscription, les paiements seront la mensualité et l'inscription annuelle
@@ -209,7 +209,9 @@ export class InscriptionService {
     playerId: joueur.id, 
     totalAmount: annual_payment.amount, 
   });
-  payment_obligations.push(annual_obligation);
+  payment_obligations.push(annual_obligation); */
+
+  // 9. Ajout des paiements obligatoires à effectuer pour le joueur inscrit
 
   const payments = await this.registrationObligationService.generateForRegistration(joueur.id, new Date());
 
