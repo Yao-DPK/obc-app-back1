@@ -78,6 +78,7 @@ export class InscriptionService {
     console.log(`4`);
 
   // 4. Upload de la signature
+  
   const signUpload = await this.documentService.userFileupload(joueur.id, {...signature, filetype: "Signature Attestation"});
   
 

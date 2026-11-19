@@ -51,18 +51,22 @@ export class DocumentService {
 ) {
   // 1. Vérifier si un document de ce type existe déjà pour cet utilisateur
   const existingDoc = await this.documentRepository.findOne({userId: userId, type: file.filetype});
-
+  console.log('4.1');
   // 2. Si il existe, le supprimer (remplacement)
   if (existingDoc) {
     await this.documentRepository.delete(existingDoc.id);
   }
+    console.log('4.2');
+
   // 3. Récupérer le type de document
   const docType = await this.getDocumentTypeByName(file.filetype);
+  console.log('4.3');
 
   // 4. Upload du nouveau fichier
   const uploaded_file = await this.fileUpload(file, docType.name);
 
   
+  console.log('4.4');
 
   // 5. Créer l'entrée en base
   const document_created = await this.create({
@@ -73,6 +77,8 @@ export class DocumentService {
     publicUrl: uploaded_file.fileUrl,
     isObligatory: file.isObligatory ?? true,
   });
+    console.log('4.');
+
 
   return document_created;
 }
